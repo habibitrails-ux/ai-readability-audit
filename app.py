@@ -17,7 +17,7 @@ def check_robots_txt(target_url, headers):
     status = {bot: True for bot in AI_BOTS}
     
     try:
-        res = requests.get(robots_url, headers=headers, timeout=3)
+        res = requests.get(robots_url, headers=headers, timeout=4)
         if res.status_code == 200:
             content = res.text.lower()
             for bot in AI_BOTS:
@@ -36,7 +36,7 @@ def check_sitemap(target_url, headers, scraper_key):
     sitemap_url = f"{parsed.scheme}://{parsed.netloc}/sitemap.xml"
     
     try:
-        res = requests.get(sitemap_url, headers=headers, timeout=3)
+        res = requests.get(sitemap_url, headers=headers, timeout=4)
         if res.status_code == 200 and ("xml" in res.headers.get("Content-Type", "").lower() or "<urlset" in res.text or "<sitemapindex" in res.text):
             return {"score": 25, "found": True, "sitemap_url": sitemap_url}
     except Exception:
@@ -45,7 +45,7 @@ def check_sitemap(target_url, headers, scraper_key):
     if scraper_key:
         try:
             payload = {'api_key': scraper_key, 'url': sitemap_url}
-            res = requests.get('http://api.scraperapi.com', params=payload, timeout=4)
+            res = requests.get('http://api.scraperapi.com', params=payload, timeout=5)
             if res.status_code == 200 and ("xml" in res.text.lower() or "<urlset" in res.text or "<sitemapindex" in res.text):
                 return {"score": 25, "found": True, "sitemap_url": sitemap_url}
         except Exception:
@@ -181,7 +181,7 @@ def fetch_page_html(url, scraper_key):
     }
 
     try:
-        res = requests.get(url, headers=headers, timeout=3)
+        res = requests.get(url, headers=headers, timeout=4)
         if res.status_code == 200 and len(res.text) > 1500:
             return res.text
     except Exception:
@@ -191,10 +191,9 @@ def fetch_page_html(url, scraper_key):
         try:
             payload = {
                 'api_key': scraper_key,
-                'url': url,
-                'render': 'true'
+                'url': url
             }
-            res = requests.get('http://api.scraperapi.com', params=payload, timeout=12)
+            res = requests.get('http://api.scraperapi.com', params=payload, timeout=6)
             if res.status_code == 200 and len(res.text) > 1500:
                 return res.text
         except Exception:
