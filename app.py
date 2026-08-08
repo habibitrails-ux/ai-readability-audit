@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import urllib.robotparser
 from urllib.parse import urlparse
 import requests
@@ -86,7 +87,7 @@ def extract_schema_json_ld(html_content):
             "extracted_schema": product_schema
         }
 
-    # 2. Enhanced Open Graph & Meta Fallback (Checks all major price tag variants)
+    # 2. Enhanced Open Graph & Meta Fallback
     og_title = soup.find('meta', property='og:title') or soup.find('meta', attrs={'name': 'og:title'})
     og_image = soup.find('meta', property='og:image') or soup.find('meta', attrs={'name': 'og:image'})
     og_desc = soup.find('meta', property='og:description') or soup.find('meta', attrs={'name': 'og:description'})
@@ -108,6 +109,13 @@ def extract_schema_json_ld(html_content):
         og_data['description'] = og_desc['content']
     if og_price and og_price.get('content'):
         og_data['price'] = og_price['content']
+
+    # 3. Shopify JS Window / Regex Price Extraction Fallback
+    if 'price' not in og_data:
+        price_match = re.search(r'"price"\s*:\s*"?(\d+(?:\.\d{2})?)"?', html_content)
+        if price_match:
+            val = float(price_match.group(1))
+            og_data['price'] = f"{val/100:.2f}" if val > 1000 else f"{val:.2f}"
 
     if og_data.get('name') or og_data.get('image'):
         missing = [field for field in ['name', 'image', 'description', 'price'] if field not in og_data]
