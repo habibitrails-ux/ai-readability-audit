@@ -26,13 +26,51 @@ def check_robots_txt(target_url):
         status = {bot: True for bot in AI_BOTS}
         
     allowed_count = sum(1 for allowed in status.values() if allowed)
-    score = int((allowed_count / len(AI_BOTS)) * 50)
+    score = int((allowed_count / len(AI_BOTS)) * 25)
     return {"score": score, "details": status}
 
-def extract_schema_json_ld(html_content):
-    soup = BeautifulSoup(html_content, 'html.parser')
-    scripts = soup.find_all('script', type='application/ld+json')
+def check_sitemap(target_url, headers):
+    parsed = urlparse(target_url)
+    sitemap_url = f"{parsed.scheme}://{parsed.netloc}/sitemap.xml"
     
+    try:
+        res = requests.get(sitemap_url, headers=headers, timeout=5)
+        if res.status_code == 200 and ("xml" in res.headers.get("Content-Type", "") or "<urlset" in res.text or "<sitemapindex" in res.text):
+            return {"score": 25, "found": True, "sitemap_url": sitemap_url}
+    except Exception:
+        pass
+        
+    return {"score": 0, "found": False, "sitemap_url": sitemap_url, "issue": "sitemap.xml missing or unreachable"}
+
+def check_semantic_html(soup):
+    found_tags = []
+    missing_tags = []
+    
+    # Critical structural tags for AI readability
+    check_tags = {
+        "h1": "Main Product Heading (<h1>)",
+        "main": "Main Content Container (<main>)",
+        "header": "Page Header (<header>)",
+        "article": "Product / Article Wrapper (<article>)"
+    }
+    
+    for tag, label in check_tags.items():
+        if soup.find(tag):
+            found_tags.append(tag)
+        else:
+            missing_tags.append(label)
+            
+    # Calculate score based on found tags (up to 25 pts)
+    score = int((len(found_tags) / len(check_tags)) * 25)
+    
+    return {
+        "score": score,
+        "found_tags": found_tags,
+        "missing_tags": missing_tags
+    }
+
+def extract_schema_json_ld(soup, html_content):
+    scripts = soup.find_all('script', type='application/ld+json')
     product_schema = None
 
     def search_for_product(data):
@@ -51,7 +89,7 @@ def extract_schema_json_ld(html_content):
                     return res
         return None
 
-    # 1. Standard JSON-LD Extraction
+    # 1. Standard JSON-LD
     for script in scripts:
         if not script.string:
             continue
@@ -75,10 +113,8 @@ def extract_schema_json_ld(html_content):
         if isinstance(offers, dict):
             if 'price' not in offers and 'lowPrice' not in offers:
                 missing.append('offers.price')
-            if 'availability' not in offers:
-                missing.append('offers.availability')
 
-        points = 50 - (len(missing) * 10)
+        points = 25 - (len(missing) * 5)
         return {
             "score": max(0, points),
             "found": True,
@@ -91,13 +127,11 @@ def extract_schema_json_ld(html_content):
     og_title = soup.find('meta', property='og:title') or soup.find('meta', attrs={'name': 'og:title'})
     og_image = soup.find('meta', property='og:image') or soup.find('meta', attrs={'name': 'og:image'})
     og_desc = soup.find('meta', property='og:description') or soup.find('meta', attrs={'name': 'og:description'})
-    
     og_price = (
         soup.find('meta', property='product:price:amount') or
         soup.find('meta', property='og:price:amount') or
         soup.find('meta', attrs={'name': 'twitter:data1'}) or
-        soup.find('meta', attrs={'itemprop': 'price'}) or
-        soup.find('meta', property='schema:price')
+        soup.find('meta', attrs={'itemprop': 'price'})
     )
 
     og_data = {}
@@ -110,7 +144,7 @@ def extract_schema_json_ld(html_content):
     if og_price and og_price.get('content'):
         og_data['price'] = og_price['content']
 
-    # 3. Shopify JS Window / Regex Price Extraction Fallback
+    # 3. Shopify JS Window / Regex Fallback
     if 'price' not in og_data:
         price_match = re.search(r'"price"\s*:\s*"?(\d+(?:\.\d{2})?)"?', html_content)
         if price_match:
@@ -119,9 +153,9 @@ def extract_schema_json_ld(html_content):
 
     if og_data.get('name') or og_data.get('image'):
         missing = [field for field in ['name', 'image', 'description', 'price'] if field not in og_data]
-        points = 50 - (len(missing) * 10)
+        points = 25 - (len(missing) * 5)
         return {
-            "score": max(10, points),
+            "score": max(5, points),
             "found": True,
             "format": "OpenGraph / Meta Tags",
             "missing_fields": missing,
@@ -147,7 +181,6 @@ def run_audit():
     }
     
     html = ""
-    # Direct fetch first
     try:
         response = requests.get(url, headers=headers, timeout=6)
         if response.status_code == 200:
@@ -155,7 +188,6 @@ def run_audit():
     except Exception:
         pass
 
-    # ScraperAPI Proxy Fallback if direct fetch blocked or failed
     if not html and scraper_key:
         try:
             payload = {'api_key': scraper_key, 'url': url}
@@ -167,9 +199,15 @@ def run_audit():
     if not html:
         return jsonify({"error": "Failed to retrieve page content within timeout limit."}), 500
 
+    soup = BeautifulSoup(html, 'html.parser')
+
+    # Execute all 4 checks
     robots_res = check_robots_txt(url)
-    schema_res = extract_schema_json_ld(html)
-    total_score = robots_res['score'] + schema_res['score']
+    sitemap_res = check_sitemap(url, headers)
+    schema_res = extract_schema_json_ld(soup, html)
+    semantic_res = check_semantic_html(soup)
+
+    total_score = robots_res['score'] + sitemap_res['score'] + schema_res['score'] + semantic_res['score']
 
     return jsonify({
         "url": url,
@@ -177,7 +215,9 @@ def run_audit():
         "summary": "Ready for AI Agents" if total_score >= 80 else "Needs Optimization",
         "breakdown": {
             "bot_accessibility": robots_res,
-            "schema_json_ld": schema_res
+            "sitemap_status": sitemap_res,
+            "schema_json_ld": schema_res,
+            "semantic_html": semantic_res
         }
     })
 
