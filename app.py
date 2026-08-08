@@ -45,7 +45,7 @@ def check_sitemap(target_url, headers, scraper_key):
     if scraper_key:
         try:
             payload = {'api_key': scraper_key, 'url': sitemap_url}
-            res = requests.get('http://api.scraperapi.com', params=payload, timeout=5)
+            res = requests.get('http://api.scraperapi.com', params=payload, timeout=4)
             if res.status_code == 200 and ("xml" in res.text.lower() or "<urlset" in res.text or "<sitemapindex" in res.text):
                 return {"score": 25, "found": True, "sitemap_url": sitemap_url}
         except Exception:
@@ -175,8 +175,8 @@ def extract_schema_json_ld(soup, html_content):
 
 def fetch_page_html(url, headers, scraper_key):
     try:
-        res = requests.get(url, headers=headers, timeout=3)
-        if res.status_code == 200 and len(res.text) > 1000:
+        res = requests.get(url, headers=headers, timeout=2.5)
+        if res.status_code == 200 and len(res.text) > 1500:
             return res.text
     except Exception:
         pass
@@ -186,10 +186,11 @@ def fetch_page_html(url, headers, scraper_key):
             payload = {
                 'api_key': scraper_key,
                 'url': url,
-                'ultra_premium': 'true'
+                'antibot': 'true',
+                'keep_headers': 'true'
             }
-            res = requests.get('http://api.scraperapi.com', params=payload, timeout=6)
-            if res.status_code == 200:
+            res = requests.get('http://api.scraperapi.com', params=payload, timeout=5.5)
+            if res.status_code == 200 and len(res.text) > 1500:
                 return res.text
         except Exception:
             pass
@@ -214,8 +215,8 @@ def run_audit():
     scraper_key = os.environ.get('SCRAPER_API_KEY')
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5'
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9'
     }
 
     with ThreadPoolExecutor(max_workers=3) as executor:
