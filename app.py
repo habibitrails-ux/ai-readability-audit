@@ -111,13 +111,16 @@ def test_llm_parsing(text_content):
     except Exception as e:
         return {"score": 0, "error": "LLM Parsing Failed"}
 
-@app.route('/audit', methods=['POST'])
+@app.route('/audit', methods=['GET', 'POST'])
 def run_audit():
-    data = request.get_json()
-    url = data.get('url')
-    
+    if request.method == 'GET':
+        url = request.args.get('url')
+    else:
+        data = request.get_json(silent=True) or {}
+        url = data.get('url')
+
     if not url:
-        return jsonify({"error": "URL parameter required"}), 400
+        return jsonify({"error": "URL parameter is required"}), 400
 
     headers = {'User-Agent': 'AIAgentReadabilityBot/1.0'}
     
