@@ -7,7 +7,10 @@ from bs4 import BeautifulSoup
 from flask import Flask, request, jsonify, render_template
 from concurrent.futures import ThreadPoolExecutor
 
-app = Flask(__name__)
+import os
+
+base_dir = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, template_folder=os.path.join(base_dir, 'templates'))
 
 AI_BOTS = ["GPTBot", "PerplexityBot", "ClaudeBot", "Google-Extended", "ChatGPT-User"]
 
