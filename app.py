@@ -1,3 +1,4 @@
+import os
 import json
 import urllib.robotparser
 from urllib.parse import urlparse
@@ -49,6 +50,7 @@ def extract_schema_json_ld(html_content):
                     return res
         return None
 
+    # 1. Try extracting standard JSON-LD
     for script in scripts:
         if not script.string:
             continue
@@ -61,29 +63,57 @@ def extract_schema_json_ld(html_content):
         except (json.JSONDecodeError, TypeError):
             continue
 
-    if not product_schema:
-        return {"score": 0, "found": False, "missing_fields": ["Product Schema Missing or Client-Rendered"]}
+    if product_schema:
+        required_fields = ['name', 'image', 'description', 'offers']
+        missing = [field for field in required_fields if field not in product_schema]
+        
+        offers = product_schema.get('offers', {})
+        if isinstance(offers, list) and len(offers) > 0:
+            offers = offers[0]
+        
+        if isinstance(offers, dict):
+            if 'price' not in offers and 'lowPrice' not in offers:
+                missing.append('offers.price')
+            if 'availability' not in offers:
+                missing.append('offers.availability')
 
-    required_fields = ['name', 'image', 'description', 'offers']
-    missing = [field for field in required_fields if field not in product_schema]
-    
-    offers = product_schema.get('offers', {})
-    if isinstance(offers, list) and len(offers) > 0:
-        offers = offers[0]
-    
-    if isinstance(offers, dict):
-        if 'price' not in offers and 'lowPrice' not in offers:
-            missing.append('offers.price')
-        if 'availability' not in offers:
-            missing.append('offers.availability')
+        points = 50 - (len(missing) * 10)
+        return {
+            "score": max(0, points),
+            "found": True,
+            "format": "JSON-LD",
+            "missing_fields": missing,
+            "extracted_schema": product_schema
+        }
 
-    points = 50 - (len(missing) * 10)
-    return {
-        "score": max(0, points),
-        "found": True,
-        "missing_fields": missing,
-        "extracted_schema": product_schema
-    }
+    # 2. Fallback: Check Open Graph Meta Tags (og:title, og:image, etc.)
+    og_title = soup.find('meta', property='og:title') or soup.find('meta', attrs={'name': 'og:title'})
+    og_image = soup.find('meta', property='og:image') or soup.find('meta', attrs={'name': 'og:image'})
+    og_desc = soup.find('meta', property='og:description') or soup.find('meta', attrs={'name': 'og:description'})
+    og_price = soup.find('meta', property='product:price:amount') or soup.find('meta', attrs={'name': 'twitter:label1'})
+
+    og_data = {}
+    if og_title and og_title.get('content'):
+        og_data['name'] = og_title['content']
+    if og_image and og_image.get('content'):
+        og_data['image'] = og_image['content']
+    if og_desc and og_desc.get('content'):
+        og_data['description'] = og_desc['content']
+    if og_price and og_price.get('content'):
+        og_data['price'] = og_price['content']
+
+    if og_data.get('name') or og_data.get('image'):
+        missing = [field for field in ['name', 'image', 'description', 'price'] if field not in og_data]
+        points = 35 - (len(missing) * 10)  # Open Graph scores up to 35 pts (JSON-LD is preferred for AI agents)
+        return {
+            "score": max(10, points),
+            "found": True,
+            "format": "OpenGraph Meta Tags",
+            "missing_fields": missing,
+            "extracted_schema": og_data
+        }
+
+    return {"score": 0, "found": False, "missing_fields": ["Product Schema & Meta Tags Missing"]}
 
 @app.route('/audit', methods=['GET', 'POST'])
 def run_audit():
@@ -96,12 +126,22 @@ def run_audit():
     if not url:
         return jsonify({"error": "URL parameter is required"}), 400
 
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    }
+    scraper_key = os.environ.get('SCRAPER_API_KEY')
 
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        if scraper_key:
+            payload = {
+                'api_key': scraper_key,
+                'url': url,
+                'render': 'true'
+            }
+            response = requests.get('http://api.scraperapi.com', params=payload, timeout=25)
+        else:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+            response = requests.get(url, headers=headers, timeout=10)
+
         html = response.text
     except Exception as e:
         return jsonify({"error": f"Failed to fetch website: {str(e)}"}), 500
