@@ -142,7 +142,7 @@ def extract_schema_json_ld(soup, html_content):
     if og_price and og_price.get('content'):
         og_data['price'] = og_price['content']
 
-    # 3. Shopify JS Regex Fallback
+    # 3. Shopify / Standard Price Regex Fallback
     if 'price' not in og_data:
         price_match = re.search(r'"price"\s*:\s*"?(\d+(?:\.\d{2})?)"?', html_content)
         if price_match:
@@ -184,19 +184,21 @@ def run_audit():
     
     html = ""
     try:
-        response = requests.get(url, headers=headers, timeout=6)
+        response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
             html = response.text
     except Exception:
         pass
 
+    # ScraperAPI with ultra-fast timeout protection
     if not html and scraper_key:
         try:
-            payload = {'api_key': scraper_key, 'url': url}
-            response = requests.get('http://api.scraperapi.com', params=payload, timeout=12)
-            html = response.text
+            payload = {'api_key': scraper_key, 'url': url, 'render': 'false'}
+            response = requests.get('http://api.scraperapi.com', params=payload, timeout=20)
+            if response.status_code == 200:
+                html = response.text
         except Exception as e:
-            return jsonify({"error": f"Failed to fetch website: {str(e)}"}), 500
+            return jsonify({"error": f"Scraper API Timeout: {str(e)}"}), 500
 
     if not html:
         return jsonify({"error": "Failed to retrieve page content within timeout limit."}), 500
