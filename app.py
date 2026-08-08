@@ -173,10 +173,17 @@ def extract_schema_json_ld(soup, html_content):
 
     return {"score": 0, "found": False, "missing_fields": ["Product Schema & Meta Tags Missing"]}
 
-def fetch_page_html(url, headers, scraper_key):
+def fetch_page_html(url, scraper_key):
+    # Pass Googlebot user-agent to bypass CDN blocking
+    googlebot_headers = {
+        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5'
+    }
+
     try:
-        res = requests.get(url, headers=headers, timeout=2.5)
-        if res.status_code == 200 and len(res.text) > 1500:
+        res = requests.get(url, headers=googlebot_headers, timeout=4)
+        if res.status_code == 200 and len(res.text) > 1000:
             return res.text
     except Exception:
         pass
@@ -186,11 +193,10 @@ def fetch_page_html(url, headers, scraper_key):
             payload = {
                 'api_key': scraper_key,
                 'url': url,
-                'antibot': 'true',
                 'keep_headers': 'true'
             }
-            res = requests.get('http://api.scraperapi.com', params=payload, timeout=5.5)
-            if res.status_code == 200 and len(res.text) > 1500:
+            res = requests.get('http://api.scraperapi.com', params=payload, headers=googlebot_headers, timeout=6)
+            if res.status_code == 200 and len(res.text) > 1000:
                 return res.text
         except Exception:
             pass
@@ -213,16 +219,16 @@ def run_audit():
         return jsonify({"error": "URL parameter is required"}), 400
 
     scraper_key = os.environ.get('SCRAPER_API_KEY')
-    headers = {
+    std_headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.9'
     }
 
     with ThreadPoolExecutor(max_workers=3) as executor:
-        future_robots = executor.submit(check_robots_txt, url, headers)
-        future_sitemap = executor.submit(check_sitemap, url, headers, scraper_key)
-        future_html = executor.submit(fetch_page_html, url, headers, scraper_key)
+        future_robots = executor.submit(check_robots_txt, url, std_headers)
+        future_sitemap = executor.submit(check_sitemap, url, std_headers, scraper_key)
+        future_html = executor.submit(fetch_page_html, url, scraper_key)
 
         robots_res = future_robots.result()
         sitemap_res = future_sitemap.result()
