@@ -17,10 +17,9 @@ def check_robots_txt(target_url, headers):
     status = {bot: True for bot in AI_BOTS}
     
     try:
-        res = requests.get(robots_url, headers=headers, timeout=2.5)
+        res = requests.get(robots_url, headers=headers, timeout=3)
         if res.status_code == 200:
             content = res.text.lower()
-            # Simple, fast check for global or specific agent blocks
             for bot in AI_BOTS:
                 bot_lower = bot.lower()
                 if f"user-agent: {bot_lower}\ndisallow: /" in content or "user-agent: *\ndisallow: /" in content:
@@ -32,16 +31,25 @@ def check_robots_txt(target_url, headers):
     score = int((allowed_count / len(AI_BOTS)) * 25)
     return {"score": score, "details": status}
 
-def check_sitemap(target_url, headers):
+def check_sitemap(target_url, headers, scraper_key):
     parsed = urlparse(target_url)
     sitemap_url = f"{parsed.scheme}://{parsed.netloc}/sitemap.xml"
     
     try:
-        res = requests.get(sitemap_url, headers=headers, timeout=2.5)
-        if res.status_code == 200 and ("xml" in res.headers.get("Content-Type", "") or "<urlset" in res.text or "<sitemapindex" in res.text):
+        res = requests.get(sitemap_url, headers=headers, timeout=3)
+        if res.status_code == 200 and ("xml" in res.headers.get("Content-Type", "").lower() or "<urlset" in res.text or "<sitemapindex" in res.text):
             return {"score": 25, "found": True, "sitemap_url": sitemap_url}
     except Exception:
         pass
+
+    if scraper_key:
+        try:
+            payload = {'api_key': scraper_key, 'url': sitemap_url}
+            res = requests.get('http://api.scraperapi.com', params=payload, timeout=5)
+            if res.status_code == 200 and ("xml" in res.text.lower() or "<urlset" in res.text or "<sitemapindex" in res.text):
+                return {"score": 25, "found": True, "sitemap_url": sitemap_url}
+        except Exception:
+            pass
         
     return {"score": 0, "found": False, "sitemap_url": sitemap_url, "issue": "sitemap.xml missing or unreachable"}
 
@@ -167,16 +175,20 @@ def extract_schema_json_ld(soup, html_content):
 
 def fetch_page_html(url, headers, scraper_key):
     try:
-        res = requests.get(url, headers=headers, timeout=2.5)
-        if res.status_code == 200:
+        res = requests.get(url, headers=headers, timeout=3)
+        if res.status_code == 200 and len(res.text) > 1000:
             return res.text
     except Exception:
         pass
 
     if scraper_key:
         try:
-            payload = {'api_key': scraper_key, 'url': url}
-            res = requests.get('http://api.scraperapi.com', params=payload, timeout=3.5)
+            payload = {
+                'api_key': scraper_key,
+                'url': url,
+                'ultra_premium': 'true'
+            }
+            res = requests.get('http://api.scraperapi.com', params=payload, timeout=6)
             if res.status_code == 200:
                 return res.text
         except Exception:
@@ -201,13 +213,14 @@ def run_audit():
 
     scraper_key = os.environ.get('SCRAPER_API_KEY')
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5'
     }
 
-    # Execute all checks concurrently with strict 3.5s limit
     with ThreadPoolExecutor(max_workers=3) as executor:
         future_robots = executor.submit(check_robots_txt, url, headers)
-        future_sitemap = executor.submit(check_sitemap, url, headers)
+        future_sitemap = executor.submit(check_sitemap, url, headers, scraper_key)
         future_html = executor.submit(fetch_page_html, url, headers, scraper_key)
 
         robots_res = future_robots.result()
