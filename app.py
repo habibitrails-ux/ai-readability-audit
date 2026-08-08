@@ -5,7 +5,7 @@ import urllib.robotparser
 from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 
@@ -46,7 +46,6 @@ def check_semantic_html(soup):
     found_tags = []
     missing_tags = []
     
-    # Critical structural tags for AI readability
     check_tags = {
         "h1": "Main Product Heading (<h1>)",
         "main": "Main Content Container (<main>)",
@@ -60,7 +59,6 @@ def check_semantic_html(soup):
         else:
             missing_tags.append(label)
             
-    # Calculate score based on found tags (up to 25 pts)
     score = int((len(found_tags) / len(check_tags)) * 25)
     
     return {
@@ -123,7 +121,7 @@ def extract_schema_json_ld(soup, html_content):
             "extracted_schema": product_schema
         }
 
-    # 2. Enhanced Open Graph & Meta Fallback
+    # 2. Open Graph & Meta Fallback
     og_title = soup.find('meta', property='og:title') or soup.find('meta', attrs={'name': 'og:title'})
     og_image = soup.find('meta', property='og:image') or soup.find('meta', attrs={'name': 'og:image'})
     og_desc = soup.find('meta', property='og:description') or soup.find('meta', attrs={'name': 'og:description'})
@@ -144,7 +142,7 @@ def extract_schema_json_ld(soup, html_content):
     if og_price and og_price.get('content'):
         og_data['price'] = og_price['content']
 
-    # 3. Shopify JS Window / Regex Fallback
+    # 3. Shopify JS Regex Fallback
     if 'price' not in og_data:
         price_match = re.search(r'"price"\s*:\s*"?(\d+(?:\.\d{2})?)"?', html_content)
         if price_match:
@@ -163,6 +161,10 @@ def extract_schema_json_ld(soup, html_content):
         }
 
     return {"score": 0, "found": False, "missing_fields": ["Product Schema & Meta Tags Missing"]}
+
+@app.route('/')
+def home():
+    return render_template('index.html')
 
 @app.route('/audit', methods=['GET', 'POST'])
 def run_audit():
@@ -201,7 +203,6 @@ def run_audit():
 
     soup = BeautifulSoup(html, 'html.parser')
 
-    # Execute all 4 checks
     robots_res = check_robots_txt(url)
     sitemap_res = check_sitemap(url, headers)
     schema_res = extract_schema_json_ld(soup, html)
