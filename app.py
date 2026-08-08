@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, request, jsonify, render_template
+from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 
@@ -34,7 +35,7 @@ def check_sitemap(target_url, headers):
     sitemap_url = f"{parsed.scheme}://{parsed.netloc}/sitemap.xml"
     
     try:
-        res = requests.get(sitemap_url, headers=headers, timeout=3)
+        res = requests.get(sitemap_url, headers=headers, timeout=2)
         if res.status_code == 200 and ("xml" in res.headers.get("Content-Type", "") or "<urlset" in res.text or "<sitemapindex" in res.text):
             return {"score": 25, "found": True, "sitemap_url": sitemap_url}
     except Exception:
@@ -162,6 +163,25 @@ def extract_schema_json_ld(soup, html_content):
 
     return {"score": 0, "found": False, "missing_fields": ["Product Schema & Meta Tags Missing"]}
 
+def fetch_page_html(url, headers, scraper_key):
+    try:
+        res = requests.get(url, headers=headers, timeout=2.5)
+        if res.status_code == 200:
+            return res.text
+    except Exception:
+        pass
+
+    if scraper_key:
+        try:
+            payload = {'api_key': scraper_key, 'url': url}
+            res = requests.get('http://api.scraperapi.com', params=payload, timeout=3.5)
+            if res.status_code == 200:
+                return res.text
+        except Exception:
+            pass
+
+    return ""
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -181,30 +201,18 @@ def run_audit():
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
-    
-    html = ""
-    # 1. Direct fetch (3 sec max)
-    try:
-        response = requests.get(url, headers=headers, timeout=3)
-        if response.status_code == 200:
-            html = response.text
-    except Exception:
-        pass
 
-    # 2. ScraperAPI Proxy (5 sec max to avoid Vercel 10s limit)
-    if not html and scraper_key:
-        try:
-            payload = {'api_key': scraper_key, 'url': url}
-            response = requests.get('http://api.scraperapi.com', params=payload, timeout=5)
-            if response.status_code == 200:
-                html = response.text
-        except Exception:
-            pass
+    # Execute robots check, sitemap check, and HTML fetching concurrently
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        future_robots = executor.submit(check_robots_txt, url)
+        future_sitemap = executor.submit(check_sitemap, url, headers)
+        future_html = executor.submit(fetch_page_html, url, headers, scraper_key)
 
-    # Safe fallback response if target store blocks scrapers completely
+        robots_res = future_robots.result()
+        sitemap_res = future_sitemap.result()
+        html = future_html.result()
+
     if not html:
-        robots_res = check_robots_txt(url)
-        sitemap_res = check_sitemap(url, headers)
         return jsonify({
             "url": url,
             "overall_ai_score": robots_res['score'] + sitemap_res['score'],
@@ -212,15 +220,12 @@ def run_audit():
             "breakdown": {
                 "bot_accessibility": robots_res,
                 "sitemap_status": sitemap_res,
-                "schema_json_ld": {"score": 0, "found": False, "issue": "Page content blocked by store CDN firewall"},
+                "schema_json_ld": {"score": 0, "found": False, "issue": "Page content blocked by store firewall"},
                 "semantic_html": {"score": 0, "found_tags": [], "missing_tags": ["Blocked by Firewall"]}
             }
         })
 
     soup = BeautifulSoup(html, 'html.parser')
-
-    robots_res = check_robots_txt(url)
-    sitemap_res = check_sitemap(url, headers)
     schema_res = extract_schema_json_ld(soup, html)
     semantic_res = check_semantic_html(soup)
 
