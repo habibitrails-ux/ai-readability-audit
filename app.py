@@ -240,7 +240,12 @@ def run_audit():
             "breakdown": {
                 "bot_accessibility": robots_res,
                 "sitemap_status": sitemap_res,
-                "schema_json_ld": {"score": 0, "found": False, "issue": "Page content blocked by store firewall"},
+                "schema_json_ld": {
+                    "score": 0, 
+                    "found": False, 
+                    "issue": "Page content blocked by store firewall",
+                    "recommended_fix": "Add standard JSON-LD schema into your theme <head> tag."
+                },
                 "semantic_html": {"score": 0, "found_tags": [], "missing_tags": ["Blocked by Firewall"]}
             }
         })
@@ -248,6 +253,26 @@ def run_audit():
     soup = BeautifulSoup(html, 'html.parser')
     schema_res = extract_schema_json_ld(soup, html)
     semantic_res = check_semantic_html(soup)
+
+    # Generate actionable fix snippet if schema score is low
+    page_title = soup.title.string.strip() if soup.title and soup.title.string else "Product Name"
+    if schema_res['score'] < 25:
+        schema_res['fix_snippet'] = (
+            '<script type="application/ld+json">\n'
+            '{\n'
+            '  "@context": "https://schema.org/",\n'
+            '  "@type": "Product",\n'
+            f'  "name": "{page_title}",\n'
+            '  "description": "Add product description here",\n'
+            '  "offers": {\n'
+            '    "@type": "Offer",\n'
+            '    "priceCurrency": "USD",\n'
+            '    "price": "0.00",\n'
+            '    "availability": "https://schema.org/InStock"\n'
+            '  }\n'
+            '}\n'
+            '</script>'
+        )
 
     total_score = robots_res['score'] + sitemap_res['score'] + schema_res['score'] + semantic_res['score']
 
