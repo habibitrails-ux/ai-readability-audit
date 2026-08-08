@@ -174,16 +174,15 @@ def extract_schema_json_ld(soup, html_content):
     return {"score": 0, "found": False, "missing_fields": ["Product Schema & Meta Tags Missing"]}
 
 def fetch_page_html(url, scraper_key):
-    # Pass Googlebot user-agent to bypass CDN blocking
-    googlebot_headers = {
-        'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5'
+        'Accept-Language': 'en-US,en;q=0.9'
     }
 
     try:
-        res = requests.get(url, headers=googlebot_headers, timeout=4)
-        if res.status_code == 200 and len(res.text) > 1000:
+        res = requests.get(url, headers=headers, timeout=3)
+        if res.status_code == 200 and len(res.text) > 1500:
             return res.text
     except Exception:
         pass
@@ -193,10 +192,10 @@ def fetch_page_html(url, scraper_key):
             payload = {
                 'api_key': scraper_key,
                 'url': url,
-                'keep_headers': 'true'
+                'render': 'true'
             }
-            res = requests.get('http://api.scraperapi.com', params=payload, headers=googlebot_headers, timeout=6)
-            if res.status_code == 200 and len(res.text) > 1000:
+            res = requests.get('http://api.scraperapi.com', params=payload, timeout=12)
+            if res.status_code == 200 and len(res.text) > 1500:
                 return res.text
         except Exception:
             pass
