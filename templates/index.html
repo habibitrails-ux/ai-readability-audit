@@ -5,194 +5,104 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Readability Audit</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Lemon Squeezy Overlay JS -->
+    <script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
-    <div class="max-w-4xl mx-auto px-4 py-12">
-        <!-- Header -->
-        <div class="text-center mb-10">
-            <h1 class="text-4xl font-extrabold text-white tracking-tight sm:text-5xl mb-3">
-                AI Readability Audit
-            </h1>
-            <p class="text-slate-400 text-lg">
-                Analyze how effectively AI search agents and LLM crawlers read your e-commerce store.
-            </p>
+<body class="bg-slate-900 text-white min-h-screen p-6">
+    <div class="max-w-4xl mx-auto space-y-6">
+        <header class="text-center py-6">
+            <h1 class="text-3xl font-bold">AI Readability Diagnostic</h1>
+            <p class="text-slate-400 mt-2">Check if your e-commerce store is readable by AI agents</p>
+        </header>
+
+        <div class="flex gap-2">
+            <input id="urlInput" type="url" placeholder="https://yourstore.com/product" class="flex-1 px-4 py-3 bg-slate-800 rounded-lg border border-slate-700 text-white focus:outline-none focus:border-blue-500">
+            <button onclick="runAudit()" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 font-semibold rounded-lg">Run Audit</button>
         </div>
 
-        <!-- Input Form -->
-        <div class="bg-slate-800 rounded-2xl p-4 shadow-2xl border border-slate-700 mb-8">
-            <form id="auditForm" class="flex flex-col sm:flex-row gap-3">
-                <input 
-                    type="url" 
-                    id="urlInput" 
-                    placeholder="https://example.com/products/sample" 
-                    required 
-                    class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-                <button 
-                    type="submit" 
-                    id="submitBtn"
-                    class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
-                >
-                    <span>Run Audit</span>
-                    <i class="fa-solid fa-arrow-right"></i>
-                </button>
-            </form>
-        </div>
-
-        <!-- Loading Spinner -->
-        <div id="loading" class="hidden text-center py-12">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mb-4"></div>
-            <p class="text-slate-400 font-medium">Scanning robots.txt, sitemaps, schema markup, and HTML layout...</p>
-        </div>
-
-        <!-- Error Container -->
-        <div id="errorMessage" class="hidden bg-red-900/40 border border-red-500/50 text-red-200 p-4 rounded-xl mb-8 text-center"></div>
-
-        <!-- Results Dashboard -->
         <div id="results" class="hidden space-y-6">
-            <!-- Overall Score Banner -->
-            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-6">
-                <div>
-                    <span id="summaryBadge" class="inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2"></span>
-                    <h2 class="text-xl font-bold text-white">Overall Readability Index</h2>
-                    <p id="auditedUrl" class="text-sm text-slate-400 break-all mt-1"></p>
-                </div>
-                <div class="text-center sm:text-right">
-                    <div id="scoreDisplay" class="text-5xl font-black">0<span class="text-2xl text-slate-500">/100</span></div>
-                </div>
-            </div>
-
-            <!-- 4-Grid Breakdown -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Bot Accessibility -->
-                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-robot text-indigo-400"></i> Bot Accessibility
-                        </h3>
-                        <span id="botScore" class="text-sm font-semibold text-slate-300">0/25</span>
-                    </div>
-                    <div id="botList" class="space-y-2 text-sm"></div>
-                </div>
-
-                <!-- Sitemap Status -->
-                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-sitemap text-emerald-400"></i> Sitemap Indexing
-                        </h3>
-                        <span id="sitemapScore" class="text-sm font-semibold text-slate-300">0/25</span>
-                    </div>
-                    <div id="sitemapDetails" class="text-sm text-slate-300 space-y-2"></div>
-                </div>
-
-                <!-- Structured Data -->
-                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-code text-amber-400"></i> Product Metadata
-                        </h3>
-                        <span id="schemaScore" class="text-sm font-semibold text-slate-300">0/25</span>
-                    </div>
-                    <div id="schemaDetails" class="text-sm text-slate-300 space-y-2"></div>
-                </div>
-
-                <!-- Semantic HTML -->
-                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-layer-group text-purple-400"></i> Semantic HTML
-                        </h3>
-                        <span id="semanticScore" class="text-sm font-semibold text-slate-300">0/25</span>
-                    </div>
-                    <div id="semanticDetails" class="text-sm text-slate-300 space-y-2"></div>
-                </div>
-            </div>
+            <!-- Dynamic audit results rendered here -->
         </div>
     </div>
 
     <script>
-        document.getElementById('auditForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const url = document.getElementById('urlInput').value.trim();
-            if (!url) return;
+    async function runAudit() {
+        const urlInput = document.getElementById('urlInput').value.trim();
+        if (!urlInput) return;
 
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('results').classList.add('hidden');
-            document.getElementById('errorMessage').classList.add('hidden');
+        // Check local audit count
+        let usageCount = parseInt(localStorage.getItem('audit_count') || '0');
 
-            try {
-                const res = await fetch(`/audit?url=${encodeURIComponent(url)}`);
-                const data = await res.json();
+        if (usageCount >= 3) {
+            // Replace with your actual Lemon Squeezy checkout URL
+            LemonSqueezy.Url.Open('https://yourstore.lemonsqueezy.com/buy/variant_id?embed=1');
+            alert('You have used your 3 free audits. Please upgrade to unlock unlimited checks.');
+            return;
+        }
 
-                if (!res.ok) throw new Error(data.error || 'Failed to complete audit');
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.classList.remove('hidden');
+        resultsDiv.innerHTML = '<p class="text-center text-slate-400">Running diagnostic scan...</p>';
 
-                document.getElementById('auditedUrl').textContent = data.url;
-                const scoreDisplay = document.getElementById('scoreDisplay');
-                scoreDisplay.innerHTML = `${data.overall_ai_score}<span class="text-2xl text-slate-500">/100</span>`;
-                
-                const badge = document.getElementById('summaryBadge');
-                badge.textContent = data.summary;
-                if (data.overall_ai_score >= 80) {
-                    badge.className = "inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
-                    scoreDisplay.className = "text-5xl font-black text-emerald-400";
-                } else if (data.overall_ai_score >= 50) {
-                    badge.className = "inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 bg-amber-500/20 text-amber-400 border border-amber-500/30";
-                    scoreDisplay.className = "text-5xl font-black text-amber-400";
-                } else {
-                    badge.className = "inline-block px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2 bg-red-500/20 text-red-400 border border-red-500/30";
-                    scoreDisplay.className = "text-5xl font-black text-red-400";
-                }
+        try {
+            const response = await fetch('/audit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: urlInput })
+            });
 
-                // Bot Accessibility
-                const botRes = data.breakdown.bot_accessibility;
-                document.getElementById('botScore').textContent = `${botRes.score}/25`;
-                const botList = document.getElementById('botList');
-                botList.innerHTML = Object.entries(botRes.details).map(([bot, allowed]) => `
-                    <div class="flex justify-between items-center">
-                        <span class="text-slate-400">${bot}</span>
-                        ${allowed 
-                            ? '<span class="text-emerald-400 text-xs font-bold"><i class="fa-solid fa-check"></i> Allowed</span>' 
-                            : '<span class="text-red-400 text-xs font-bold"><i class="fa-solid fa-xmark"></i> Blocked</span>'}
+            const data = await response.json();
+            
+            // Increment usage count on successful request
+            localStorage.setItem('audit_count', usageCount + 1);
+
+            let snippetHtml = '';
+            if (data.breakdown.schema_json_ld.fix_snippet) {
+                snippetHtml = `
+                    <div class="mt-4 p-4 bg-slate-950 rounded border border-slate-800">
+                        <p class="text-xs font-semibold text-yellow-400 mb-2">Recommended Fix Snippet:</p>
+                        <pre class="text-xs text-green-400 overflow-x-auto"><code>${escapeHtml(data.breakdown.schema_json_ld.fix_snippet)}</code></pre>
                     </div>
-                `).join('');
-
-                // Sitemap Status
-                const siteRes = data.breakdown.sitemap_status;
-                document.getElementById('sitemapScore').textContent = `${siteRes.score}/25`;
-                document.getElementById('sitemapDetails').innerHTML = siteRes.found 
-                    ? `<p class="text-emerald-400"><i class="fa-solid fa-circle-check"></i> Sitemap found</p><a href="${siteRes.sitemap_url}" target="_blank" class="text-xs text-indigo-400 hover:underline break-all">${siteRes.sitemap_url}</a>`
-                    : `<p class="text-red-400"><i class="fa-solid fa-circle-xmark"></i> ${siteRes.issue}</p>`;
-
-                // Schema Details
-                const schemaRes = data.breakdown.schema_json_ld;
-                document.getElementById('schemaScore').textContent = `${schemaRes.score}/25`;
-                document.getElementById('schemaDetails').innerHTML = `
-                    <p><span class="text-slate-400">Format Detected:</span> <strong class="text-white">${schemaRes.format || 'None'}</strong></p>
-                    <p><span class="text-slate-400">Missing Fields:</span> ${schemaRes.missing_fields && schemaRes.missing_fields.length > 0 
-                        ? `<span class="text-amber-400">${schemaRes.missing_fields.join(', ')}</span>` 
-                        : '<span class="text-emerald-400">None (Complete Schema)</span>'}</p>
                 `;
-
-                // Semantic HTML
-                const semRes = data.breakdown.semantic_html;
-                document.getElementById('semanticScore').textContent = `${semRes.score}/25`;
-                document.getElementById('semanticDetails').innerHTML = `
-                    <p><span class="text-slate-400">Tags Found:</span> <span class="text-emerald-400">${semRes.found_tags.join(', ') || 'None'}</span></p>
-                    <p><span class="text-slate-400">Missing Elements:</span> ${semRes.missing_tags.length > 0 
-                        ? `<span class="text-amber-400">${semRes.missing_tags.join(', ')}</span>` 
-                        : '<span class="text-emerald-400">None</span>'}</p>
-                `;
-
-                document.getElementById('results').classList.remove('hidden');
-            } catch (err) {
-                document.getElementById('errorMessage').textContent = err.message;
-                document.getElementById('errorMessage').classList.remove('hidden');
-            } finally {
-                document.getElementById('loading').classList.add('hidden');
             }
-        });
+
+            resultsDiv.innerHTML = `
+                <div class="p-6 bg-slate-800 rounded-xl border border-slate-700">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-lg font-semibold">${data.summary}</span>
+                        <span class="text-3xl font-bold ${data.overall_ai_score >= 80 ? 'text-green-400' : 'text-yellow-400'}">${data.overall_ai_score}/100</span>
+                    </div>
+                    <p class="text-xs text-slate-400">${data.url}</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-slate-800 rounded-lg border border-slate-700">
+                        <h3 class="font-bold mb-2">Bot Accessibility (${data.breakdown.bot_accessibility.score}/25)</h3>
+                        <p class="text-sm text-slate-300">Crawlers Allowed: ${data.breakdown.bot_accessibility.score / 5}/5</p>
+                    </div>
+                    <div class="p-4 bg-slate-800 rounded-lg border border-slate-700">
+                        <h3 class="font-bold mb-2">Sitemap Indexing (${data.breakdown.sitemap_status.score}/25)</h3>
+                        <p class="text-sm text-slate-300">${data.breakdown.sitemap_status.found ? 'Sitemap found' : 'Sitemap missing'}</p>
+                    </div>
+                    <div class="p-4 bg-slate-800 rounded-lg border border-slate-700">
+                        <h3 class="font-bold mb-2">Product Metadata (${data.breakdown.schema_json_ld.score}/25)</h3>
+                        <p class="text-sm text-slate-300">Format: ${data.breakdown.schema_json_ld.format || 'None'}</p>
+                        ${snippetHtml}
+                    </div>
+                    <div class="p-4 bg-slate-800 rounded-lg border border-slate-700">
+                        <h3 class="font-bold mb-2">Semantic HTML (${data.breakdown.semantic_html.score}/25)</h3>
+                        <p class="text-sm text-slate-300">Found tags: ${data.breakdown.semantic_html.found_tags ? data.breakdown.semantic_html.found_tags.join(', ') : 'None'}</p>
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            resultsDiv.innerHTML = '<p class="text-center text-red-400">Scan failed. Check URL or network connection.</p>';
+        }
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
     </script>
 </body>
 </html>
