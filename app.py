@@ -34,7 +34,7 @@ def check_sitemap(target_url, headers):
     sitemap_url = f"{parsed.scheme}://{parsed.netloc}/sitemap.xml"
     
     try:
-        res = requests.get(sitemap_url, headers=headers, timeout=5)
+        res = requests.get(sitemap_url, headers=headers, timeout=3)
         if res.status_code == 200 and ("xml" in res.headers.get("Content-Type", "") or "<urlset" in res.text or "<sitemapindex" in res.text):
             return {"score": 25, "found": True, "sitemap_url": sitemap_url}
     except Exception:
@@ -142,7 +142,7 @@ def extract_schema_json_ld(soup, html_content):
     if og_price and og_price.get('content'):
         og_data['price'] = og_price['content']
 
-    # 3. Shopify / Standard Price Regex Fallback
+    # 3. Shopify JS Regex Fallback
     if 'price' not in og_data:
         price_match = re.search(r'"price"\s*:\s*"?(\d+(?:\.\d{2})?)"?', html_content)
         if price_match:
@@ -183,25 +183,39 @@ def run_audit():
     }
     
     html = ""
+    # 1. Direct fetch (3 sec max)
     try:
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, headers=headers, timeout=3)
         if response.status_code == 200:
             html = response.text
     except Exception:
         pass
 
-    # ScraperAPI with ultra-fast timeout protection
+    # 2. ScraperAPI Proxy (5 sec max to avoid Vercel 10s limit)
     if not html and scraper_key:
         try:
-            payload = {'api_key': scraper_key, 'url': url, 'render': 'false'}
-            response = requests.get('http://api.scraperapi.com', params=payload, timeout=20)
+            payload = {'api_key': scraper_key, 'url': url}
+            response = requests.get('http://api.scraperapi.com', params=payload, timeout=5)
             if response.status_code == 200:
                 html = response.text
-        except Exception as e:
-            return jsonify({"error": f"Scraper API Timeout: {str(e)}"}), 500
+        except Exception:
+            pass
 
+    # Safe fallback response if target store blocks scrapers completely
     if not html:
-        return jsonify({"error": "Failed to retrieve page content within timeout limit."}), 500
+        robots_res = check_robots_txt(url)
+        sitemap_res = check_sitemap(url, headers)
+        return jsonify({
+            "url": url,
+            "overall_ai_score": robots_res['score'] + sitemap_res['score'],
+            "summary": "Needs Optimization (Cloudflare/Bot Blocked)",
+            "breakdown": {
+                "bot_accessibility": robots_res,
+                "sitemap_status": sitemap_res,
+                "schema_json_ld": {"score": 0, "found": False, "issue": "Page content blocked by store CDN firewall"},
+                "semantic_html": {"score": 0, "found_tags": [], "missing_tags": ["Blocked by Firewall"]}
+            }
+        })
 
     soup = BeautifulSoup(html, 'html.parser')
 
