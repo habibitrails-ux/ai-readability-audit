@@ -1,4 +1,6 @@
-from app import app
+import sys
+import os
 
-# Vercel entry point
-app = app
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+from app import app
