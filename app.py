@@ -1,7 +1,6 @@
 import os
 import json
 import re
-import urllib.robotparser
 from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
@@ -12,19 +11,22 @@ app = Flask(__name__)
 
 AI_BOTS = ["GPTBot", "PerplexityBot", "ClaudeBot", "Google-Extended", "ChatGPT-User"]
 
-def check_robots_txt(target_url):
+def check_robots_txt(target_url, headers):
     parsed = urlparse(target_url)
     robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
-    rp = urllib.robotparser.RobotFileParser()
-    rp.set_url(robots_url)
+    status = {bot: True for bot in AI_BOTS}
     
-    status = {}
     try:
-        rp.read()
-        for bot in AI_BOTS:
-            status[bot] = rp.can_fetch(bot, target_url)
+        res = requests.get(robots_url, headers=headers, timeout=2.5)
+        if res.status_code == 200:
+            content = res.text.lower()
+            # Simple, fast check for global or specific agent blocks
+            for bot in AI_BOTS:
+                bot_lower = bot.lower()
+                if f"user-agent: {bot_lower}\ndisallow: /" in content or "user-agent: *\ndisallow: /" in content:
+                    status[bot] = False
     except Exception:
-        status = {bot: True for bot in AI_BOTS}
+        pass
         
     allowed_count = sum(1 for allowed in status.values() if allowed)
     score = int((allowed_count / len(AI_BOTS)) * 25)
@@ -35,7 +37,7 @@ def check_sitemap(target_url, headers):
     sitemap_url = f"{parsed.scheme}://{parsed.netloc}/sitemap.xml"
     
     try:
-        res = requests.get(sitemap_url, headers=headers, timeout=2)
+        res = requests.get(sitemap_url, headers=headers, timeout=2.5)
         if res.status_code == 200 and ("xml" in res.headers.get("Content-Type", "") or "<urlset" in res.text or "<sitemapindex" in res.text):
             return {"score": 25, "found": True, "sitemap_url": sitemap_url}
     except Exception:
@@ -143,7 +145,7 @@ def extract_schema_json_ld(soup, html_content):
     if og_price and og_price.get('content'):
         og_data['price'] = og_price['content']
 
-    # 3. Shopify JS Regex Fallback
+    # 3. Regex Fallback
     if 'price' not in og_data:
         price_match = re.search(r'"price"\s*:\s*"?(\d+(?:\.\d{2})?)"?', html_content)
         if price_match:
@@ -202,9 +204,9 @@ def run_audit():
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
 
-    # Execute robots check, sitemap check, and HTML fetching concurrently
+    # Execute all checks concurrently with strict 3.5s limit
     with ThreadPoolExecutor(max_workers=3) as executor:
-        future_robots = executor.submit(check_robots_txt, url)
+        future_robots = executor.submit(check_robots_txt, url, headers)
         future_sitemap = executor.submit(check_sitemap, url, headers)
         future_html = executor.submit(fetch_page_html, url, headers, scraper_key)
 
