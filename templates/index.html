@@ -157,8 +157,8 @@
     <div class="bg-[#101728] border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative">
       <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">✕</button>
       <div class="flex border-b border-slate-800 pb-2 gap-4">
-        <button id="tab-login" onclick="switchAuthTab('login')" class="text-sm font-bold text-blue-400 border-b-2 border-blue-500 pb-1">Sign In</button>
-        <button id="tab-signup" onclick="switchAuthTab('signup')" class="text-sm font-bold text-slate-400 hover:text-white pb-1">Create Account</button>
+        <button id="tab-login" type="button" onclick="switchAuthTab('login')" class="text-sm font-bold text-blue-400 border-b-2 border-blue-500 pb-1">Sign In</button>
+        <button id="tab-signup" type="button" onclick="switchAuthTab('signup')" class="text-sm font-bold text-slate-400 hover:text-white pb-1">Create Account</button>
       </div>
 
       <form onsubmit="handleAuthSubmit(event)" class="space-y-3">
@@ -221,7 +221,7 @@
 
     async function checkUserSession() {
       try {
-        const res = await fetch('/me');
+        const res = await fetch('/me', { credentials: 'include' });
         const data = await res.json();
         if(data.authenticated) {
           currentUser = data;
@@ -266,25 +266,31 @@
       e.preventDefault();
       const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value.trim();
-      const res = await fetch(currentAuthMode === 'login' ? '/login' : '/signup', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if(res.ok) {
-        currentUser = data;
-        renderLoggedInState(data.email, data.credits);
-        closeAuthModal();
-      } else {
-        const modalMsg = document.getElementById('modal-msg');
-        modalMsg.innerText = data.error || "Authentication failed.";
-        modalMsg.className = "text-xs text-center p-2 rounded-lg text-red-400 bg-red-950/40 border border-red-800/40 block";
+      
+      try {
+        const res = await fetch(currentAuthMode === 'login' ? '/login' : '/signup', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'include',
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if(res.ok) {
+          currentUser = data;
+          renderLoggedInState(data.email, data.credits);
+          closeAuthModal();
+        } else {
+          const modalMsg = document.getElementById('modal-msg');
+          modalMsg.innerText = data.error || "Authentication failed.";
+          modalMsg.className = "text-xs text-center p-2 rounded-lg text-red-400 bg-red-950/40 border border-red-800/40 block";
+        }
+      } catch(err) {
+        console.error("Auth error:", err);
       }
     }
 
     async function handleLogout() {
-      await fetch('/logout', { method: 'POST' });
+      await fetch('/logout', { method: 'POST', credentials: 'include' });
       currentUser = null;
       location.reload();
     }
@@ -314,6 +320,7 @@
         const res = await fetch('/audit', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
+          credentials: 'include',
           body: JSON.stringify({ url: urlInput })
         });
         const data = await res.json();
@@ -335,7 +342,6 @@
           return;
         }
 
-        // Update active user credit UI
         if(typeof data.remaining_credits !== 'undefined') {
           currentUser.credits = data.remaining_credits;
           renderLoggedInState(currentUser.email, currentUser.credits);
@@ -360,7 +366,6 @@
         document.getElementById('bar-schema').style.width = `${((bd.schema_json_ld || 0) / 25) * 100}%`;
         document.getElementById('bar-semantic').style.width = `${((bd.semantic_html || 0) / 25) * 100}%`;
 
-        // Render Fixes dynamically
         const fixesContainer = document.getElementById('fixes-container');
         const fixesList = document.getElementById('fixes-list');
         fixesList.innerHTML = "";
@@ -385,8 +390,4 @@
           fixesContainer.classList.add('hidden');
         }
 
-        resultsBox.classList.remove('hidden');
-      } catch(e) {
-        btnText.innerText = "Check AI Readability";
-        errBox.innerText = "Network execution error.";
-        errBox.classList.remove('hidd
+        resultsBo
