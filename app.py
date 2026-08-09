@@ -13,13 +13,15 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "super-secret-key-change-me"
 app.config["MAIL_SERVER"] = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
 app.config["MAIL_PORT"] = int(os.environ.get("MAIL_PORT", 587))
 app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")  # Your email address
-app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")  # 16-char App Password
+app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")  # Your Gmail address
+app.config["MAIL_PASSWORD"] = os.environ.get(
+    "MAIL_PASSWORD"
+)  # 16-char Gmail App Password
 app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_USERNAME")
 
 mail = Mail(app)
 
-# Storage for pending OTPs and verified user credits
+# In-memory storage for pending OTPs and verified user credits
 PENDING_OTPS = {}
 USERS_DB = {}
 
@@ -52,14 +54,106 @@ def send_otp():
     try:
         sender_email = app.config["MAIL_USERNAME"]
         msg = Message(
-            subject="Your Verification Code",
+            subject="Verify your email - AI Readability Audit",
             sender=("AI Readability Audit", sender_email),
             recipients=[email],
-            body=(
-                f"Your 6-digit verification code is: {otp}\n\n"
-                "This code will expire in 10 minutes. If you did not request this code, please ignore this email."
-            ),
         )
+
+        # Professional HTML Email Body
+        msg.html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body {{
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+              background-color: #f4f6f9;
+              margin: 0;
+              padding: 24px;
+            }}
+            .container {{
+              max-width: 480px;
+              margin: 0 auto;
+              background: #ffffff;
+              border-radius: 12px;
+              padding: 32px;
+              border: 1px solid #e2e8f0;
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            }}
+            .header {{
+              text-align: center;
+              margin-bottom: 24px;
+            }}
+            .logo-text {{
+              font-size: 20px;
+              font-weight: 800;
+              color: #0f172a;
+              letter-spacing: -0.5px;
+            }}
+            .title {{
+              font-size: 18px;
+              font-weight: 600;
+              color: #1e293b;
+              margin-top: 16px;
+              margin-bottom: 8px;
+            }}
+            .description {{
+              font-size: 14px;
+              color: #64748b;
+              line-height: 1.5;
+              margin-bottom: 24px;
+            }}
+            .code-box {{
+              background-color: #f8fafc;
+              border-radius: 8px;
+              padding: 16px;
+              text-align: center;
+              margin-bottom: 24px;
+              border: 1px dashed #0284c7;
+            }}
+            .otp-code {{
+              font-size: 32px;
+              font-weight: 800;
+              color: #0284c7;
+              letter-spacing: 6px;
+              font-family: monospace;
+            }}
+            .footer {{
+              font-size: 12px;
+              color: #94a3b8;
+              text-align: center;
+              margin-top: 32px;
+              border-top: 1px solid #f1f5f9;
+              padding-top: 16px;
+            }}
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="logo-text">⚡ AI Readability Audit</div>
+            </div>
+            <div class="title">Verification Code</div>
+            <p class="description">Please use the verification code below to sign in and access your audit credits. This code will expire in 10 minutes.</p>
+
+            <div class="code-box">
+              <div class="otp-code">{otp}</div>
+            </div>
+
+            <p class="description" style="font-size: 13px; margin-bottom: 0;">If you didn't request this code, you can safely ignore this email.</p>
+
+            <div class="footer">
+              &copy; AI Readability Diagnostic Tool. All rights reserved.
+            </div>
+          </div>
+        </body>
+        </html>
+        """
+
+        # Fallback text version for basic previewers
+        msg.body = f"Your AI Readability Audit verification code is: {otp}\n\nThis code will expire in 10 minutes."
+
         mail.send(msg)
         return jsonify({"success": True, "message": "OTP sent to your email!"})
     except Exception as e:
@@ -75,7 +169,7 @@ def verify_otp():
     if PENDING_OTPS.get(email) != user_otp:
         return jsonify({"error": "Invalid or expired verification code"}), 400
 
-    # Remove code after verification
+    # Clean up OTP after successful verification
     del PENDING_OTPS[email]
 
     if email not in USERS_DB:
