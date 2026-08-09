@@ -1,329 +1,152 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Readability Audit — Analyze & Fix Your Website's AI Readiness</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-  </style>
-</head>
-<body class="bg-[#080d1a] text-slate-100 min-h-screen flex flex-col justify-between">
-
-  <!-- Navigation Header -->
-  <header class="border-b border-slate-800/80 bg-[#080d1a]/90 backdrop-blur-md sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3 cursor-pointer" onclick="window.location.href='/'">
-        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">⚡</div>
-        <span class="font-bold text-lg tracking-tight text-white">ai-readability.app</span>
-      </div>
-      <div id="auth-status" class="flex items-center space-x-3 text-sm font-medium">
-        <button onclick="openAuthModal('login')" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-md">Sign In / Sign Up</button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Container -->
-  <main class="max-w-5xl mx-auto px-6 pt-10 pb-16 w-full flex-grow space-y-12">
-
-    <!-- PUBLIC LANDING PAGE (VISIBLE WHEN LOGGED OUT) -->
-    <div id="public-landing" class="space-y-16">
-      
-      <!-- Hero Header -->
-      <div class="text-center space-y-5 max-w-3xl mx-auto pt-6">
-        <span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase">
-          AI Search Optimization (AISO)
-        </span>
-        <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
-          Make your website readable for ChatGPT, Perplexity & AI Search
-        </h1>
-        <p class="text-slate-400 text-base sm:text-lg leading-relaxed">
-          AI crawlers browse the web differently than traditional search engines. AI Readability Audit inspects your technical infrastructure and gives you instant, copy-paste code fixes to rank higher in AI responses.
-        </p>
-        <div class="pt-2 flex justify-center gap-4">
-          <button onclick="openAuthModal('signup')" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-blue-600/25 text-sm">
-            Get Started Free (5 Credits)
-          </button>
-          <a href="#pricing-section" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-semibold px-6 py-3.5 rounded-xl transition-all text-sm flex items-center">
-            View Pricing
-          </a>
-        </div>
-      </div>
-
-      <!-- Feature Capabilities Grid -->
-      <div class="space-y-6">
-        <div class="text-center space-y-2">
-          <h2 class="text-2xl font-bold text-white">How AI Readability Works</h2>
-          <p class="text-slate-400 text-sm">Automated diagnostic scanning designed specifically for AI models.</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="bg-[#101728] border border-slate-800/80 rounded-2xl p-6 space-y-3">
-            <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold text-lg">🤖</div>
-            <h3 class="text-lg font-bold text-white">Bot Accessibility Check</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">
-              Scans your <code class="text-emerald-400 bg-[#080d1a] px-1.5 py-0.5 rounded">robots.txt</code> file to ensure AI crawlers like GPTBot, ClaudeBot, and PerplexityBot are not blocked.
-            </p>
-          </div>
-
-          <div class="bg-[#101728] border border-slate-800/80 rounded-2xl p-6 space-y-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-lg">🗺️</div>
-            <h3 class="text-lg font-bold text-white">Sitemap Verification</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">
-              Verifies <code class="text-emerald-400 bg-[#080d1a] px-1.5 py-0.5 rounded">sitemap.xml</code> configuration to ensure AI engines map and index deep pages.
-            </p>
-          </div>
-
-          <div class="bg-[#101728] border border-slate-800/80 rounded-2xl p-6 space-y-3">
-            <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-lg">🏷️</div>
-            <h3 class="text-lg font-bold text-white">Schema JSON-LD Parsing</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">
-              Detects structured schema data so LLMs extract details about products, pricing, and organization without hallucinations.
-            </p>
-          </div>
-
-          <div class="bg-[#101728] border border-slate-800/80 rounded-2xl p-6 space-y-3">
-            <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold text-lg">📄</div>
-            <h3 class="text-lg font-bold text-white">Semantic HTML Structure</h3>
-            <p class="text-slate-400 text-sm leading-relaxed">
-              Evaluates page containers (<code class="text-purple-300 bg-[#080d1a] px-1.5 py-0.5 rounded">&lt;main&gt;</code>, <code class="text-purple-300 bg-[#080d1a] px-1.5 py-0.5 rounded">&lt;article&gt;</code>) to verify content clarity.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pricing Section -->
-      <div id="pricing-section" class="space-y-6 pt-6">
-        <div class="text-center space-y-2">
-          <h2 class="text-2xl font-bold text-white">Simple, Transparent Pricing</h2>
-          <p class="text-slate-400 text-sm">Start diagnosing your web properties with free credits.</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-          <div class="bg-[#101728] border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-6">
-            <div class="space-y-3">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Starter</span>
-              <div class="text-3xl font-extrabold text-white">$0</div>
-              <p class="text-xs text-slate-400">Ideal for testing personal websites or single stores.</p>
-              <ul class="text-xs text-slate-300 space-y-2.5 pt-2">
-                <li class="flex items-center gap-2"><span class="text-blue-400 font-bold">✓</span> 5 Free Audit Credits on sign-up</li>
-                <li class="flex items-center gap-2"><span class="text-blue-400 font-bold">✓</span> Full 100-Point Score Breakdown</li>
-                <li class="flex items-center gap-2"><span class="text-blue-400 font-bold">✓</span> Automated Code Fix Recommendations</li>
-              </ul>
-            </div>
-            <button onclick="openAuthModal('signup')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-xs transition-all">
-              Create Free Account
-            </button>
-          </div>
-
-          <div class="bg-[#101728] border border-blue-500/40 rounded-2xl p-6 flex flex-col justify-between space-y-6 relative overflow-hidden">
-            <div class="absolute top-3 right-3 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-              Coming Soon
-            </div>
-            <div class="space-y-3">
-              <span class="text-xs font-bold uppercase tracking-wider text-blue-400">Pro / Agency</span>
-              <div class="text-3xl font-extrabold text-white">$29 <span class="text-xs text-slate-500 font-normal">/ month</span></div>
-              <p class="text-xs text-slate-400">For agencies managing multiple client storefronts.</p>
-              <ul class="text-xs text-slate-300 space-y-2.5 pt-2">
-                <li class="flex items-center gap-2"><span class="text-blue-400 font-bold">✓</span> 100 Audits / Month</li>
-                <li class="flex items-center gap-2"><span class="text-blue-400 font-bold">✓</span> Continuous Monitoring & Alerting</li>
-                <li class="flex items-center gap-2"><span class="text-blue-400 font-bold">✓</span> White-label PDF Audit Reports</li>
-              </ul>
-            </div>
-            <button disabled class="w-full bg-slate-800 text-slate-500 font-semibold py-2.5 rounded-xl text-xs cursor-not-allowed">
-              Waitlist Only
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- FAQ Section -->
-      <div class="space-y-6 pt-6">
-        <div class="text-center space-y-2">
-          <h2 class="text-2xl font-bold text-white">Frequently Asked Questions</h2>
-          <p class="text-slate-400 text-sm">Need help understanding AI readability?</p>
-        </div>
-
-        <div class="max-w-3xl mx-auto space-y-4">
-          <details class="bg-[#101728] border border-slate-800 rounded-xl p-4 group cursor-pointer">
-            <summary class="text-sm font-bold text-white flex justify-between items-center">
-              What is AI Readability and why does it matter?
-              <span class="text-slate-500 group-open:rotate-180 transition-transform">▼</span>
-            </summary>
-            <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-              AI search tools like Perplexity, ChatGPT, and Google AI Overviews read web pages directly to summarize answers for users. If your website lacks semantic HTML, blocks crawler bots, or omits JSON-LD schema, AI models may ignore or misrepresent your business.
-            </p>
-          </details>
-
-          <details class="bg-[#101728] border border-slate-800 rounded-xl p-4 group cursor-pointer">
-            <summary class="text-sm font-bold text-white flex justify-between items-center">
-              How do audit credits work?
-              <span class="text-slate-500 group-open:rotate-180 transition-transform">▼</span>
-            </summary>
-            <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-              Every new user account receives 5 complimentary credits upon registration. Each web address audit consumes 1 credit.
-            </p>
-          </details>
-
-          <details class="bg-[#101728] border border-slate-800 rounded-xl p-4 group cursor-pointer">
-            <summary class="text-sm font-bold text-white flex justify-between items-center">
-              How do I apply the fixes provided by the audit?
-              <span class="text-slate-500 group-open:rotate-180 transition-transform">▼</span>
-            </summary>
-            <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-              Simply copy the code snippets generated in your audit results and paste them into your website’s HTML template, CMS, or root server directory.
-            </p>
-          </details>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- PRIVATE WORKSPACE (VISIBLE WHEN LOGGED IN) -->
-    <div id="private-workspace" class="hidden space-y-10">
-      
-      <div id="checker" class="text-center space-y-3">
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-          AI Readability Audit Workspace
-        </h1>
-        <p class="text-slate-400 text-sm max-w-2xl mx-auto">
-          Inspect bot access, sitemap status, JSON-LD structured data, and semantic HTML structure.
-        </p>
-      </div>
-
-      <!-- URL Input Card -->
-      <div class="bg-[#101728] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
-        <div class="flex items-center justify-between">
-          <label for="url-input" class="text-sm font-semibold text-slate-300">Target Web Address</label>
-        </div>
-        <div class="flex flex-col sm:flex-row gap-3">
-          <input id="url-input" type="url" placeholder="https://example.com" class="flex-1 bg-[#080d1a] border border-slate-800 rounded-xl px-4 py-3.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-          <button id="btn-submit" type="button" onclick="runAudit()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-blue-600/20 whitespace-nowrap">
-            <span id="btn-text">Check AI Readability</span>
-          </button>
-        </div>
-        <div id="error-msg" class="hidden text-xs text-red-400 bg-red-950/40 border border-red-800/40 p-3 rounded-lg"></div>
-      </div>
-
-      <!-- Diagnostic Results Box -->
-      <div id="results-box" class="hidden space-y-8">
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="bg-[#101728] border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Overall Readiness</span>
-            <div class="mt-4 flex items-baseline gap-2">
-              <span id="score-display" class="text-4xl font-extrabold text-white">0</span>
-              <span class="text-sm font-semibold text-slate-500">/ 100</span>
-            </div>
-            <p id="result-summary" class="text-xs text-slate-400 mt-2 line-clamp-2"></p>
-          </div>
-
-          <div class="bg-[#101728] border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Crawl Access</span>
-            <div class="mt-4 flex items-baseline gap-2">
-              <span id="score-access-num" class="text-4xl font-extrabold text-white">0</span>
-              <span class="text-sm font-semibold text-slate-500">/ 50</span>
-            </div>
-            <p class="text-xs text-slate-400 mt-2">robots.txt & sitemap verification</p>
-          </div>
-
-          <div class="bg-[#101728] border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Structured Context</span>
-            <div class="mt-4 flex items-baseline gap-2">
-              <span id="score-context-num" class="text-4xl font-extrabold text-white">0</span>
-              <span class="text-sm font-semibold text-slate-500">/ 50</span>
-            </div>
-            <p class="text-xs text-slate-400 mt-2">JSON-LD & semantic HTML parsing</p>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-[#101728] border border-slate-800 rounded-2xl p-5 space-y-3">
-            <div class="flex items-center justify-between">
-              <h4 class="text-sm font-bold text-white">Bot Accessibility</h4>
-              <span id="score-bot" class="text-xs font-mono font-bold text-slate-300">0/25</span>
-            </div>
-            <div class="w-full bg-[#080d1a] h-2 rounded-full overflow-hidden border border-slate-800">
-              <div id="bar-bot" class="bg-blue-500 h-full transition-all duration-500" style="width: 0%"></div>
-            </div>
-          </div>
-
-          <div class="bg-[#101728] border border-slate-800 rounded-2xl p-5 space-y-3">
-            <div class="flex items-center justify-between">
-              <h4 class="text-sm font-bold text-white">Sitemap Status</h4>
-              <span id="score-sitemap" class="text-xs font-mono font-bold text-slate-300">0/25</span>
-            </div>
-            <div class="w-full bg-[#080d1a] h-2 rounded-full overflow-hidden border border-slate-800">
-              <div id="bar-sitemap" class="bg-emerald-500 h-full transition-all duration-500" style="width: 0%"></div>
-            </div>
-          </div>
-
-          <div class="bg-[#101728] border border-slate-800 rounded-2xl p-5 space-y-3">
-            <div class="flex items-center justify-between">
-              <h4 class="text-sm font-bold text-white">Schema JSON-LD</h4>
-              <span id="score-schema" class="text-xs font-mono font-bold text-slate-300">0/25</span>
-            </div>
-            <div class="w-full bg-[#080d1a] h-2 rounded-full overflow-hidden border border-slate-800">
-              <div id="bar-schema" class="bg-amber-500 h-full transition-all duration-500" style="width: 0%"></div>
-            </div>
-          </div>
-
-          <div class="bg-[#101728] border border-slate-800 rounded-2xl p-5 space-y-3">
-            <div class="flex items-center justify-between">
-              <h4 class="text-sm font-bold text-white">Semantic HTML</h4>
-              <span id="score-semantic" class="text-xs font-mono font-bold text-slate-300">0/25</span>
-            </div>
-            <div class="w-full bg-[#080d1a] h-2 rounded-full overflow-hidden border border-slate-800">
-              <div id="bar-semantic" class="bg-purple-500 h-full transition-all duration-500" style="width: 0%"></div>
-            </div>
-          </div>
-        </div>
-
-        <div id="fixes-container" class="bg-[#101728] border border-amber-900/50 rounded-2xl p-6 space-y-6">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-            <div>
-              <h3 class="text-lg font-bold text-amber-400">Recommended Code Fixes</h3>
-              <p class="text-xs text-slate-400">Add or update the code below on your website to reach a 100/100 score.</p>
-            </div>
-            <button onclick="runAudit()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-md">
-              🔄 Test Again
-            </button>
-          </div>
-          <div id="fixes-list" class="space-y-6"></div>
-        </div>
-
-      </div>
-
-    </div>
-
-  </main>
-
-  <!-- Auth Modal -->
-  <div id="auth-modal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-[#101728] border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative">
-      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">✕</button>
-      <div class="flex border-b border-slate-800 pb-2 gap-4">
-        <button id="tab-login" onclick="switchAuthTab('login')" class="text-sm font-bold text-blue-400 border-b-2 border-blue-500 pb-1">Sign In</button>
-        <button id="tab-signup" onclick="switchAuthTab('signup')" class="text-sm font-bold text-slate-400 hover:text-white pb-1">Create Account</button>
-      </div>
-
-      <form onsubmit="handleAuthSubmit(event)" class="space-y-3">
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Email</label>
-          <input id="auth-email" type="email" required placeholder="name@company.com" class="w-full bg-[#080d1a] border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div>
-          <label class="text-xs text-slate-400 block mb-1">Password</label>
-          <input id="auth-password" type="password" required placeholder="••••••••" class="w-full bg-[#080d1a] border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <button id="auth-submit-btn" type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 rounded-xl text-sm transition-all shadow-md">Sign In</button>
-      </form>
-      <div id="modal-msg" class="text-xs text-center hidden p-2 rounded-lg"></div>
+<!-- Insert this inside templates/index.html where your public landing page resides -->
+<div id="public-landing" class="space-y-16 max-w-5xl mx-auto px-6 pt-10 pb-16">
+  
+  <!-- Hero Section -->
+  <div class="text-center space-y-5 max-w-3xl mx-auto pt-6">
+    <span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase">
+      AI SEARCH OPTIMIZATION (AISO)
+    </span>
+    <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+      Make your website readable for ChatGPT, Perplexity & AI Search
+    </h1>
+    <p class="text-slate-400 text-base sm:text-lg leading-relaxed">
+      AI crawlers browse the web differently than traditional search engines. AI Readability Audit inspects your technical infrastructure and gives you instant, copy-paste code fixes to rank higher in AI responses.
+    </p>
+    <div class="pt-2 flex justify-center gap-4">
+      <button onclick="openAuthModal('signup')" class="bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-cyan-400/20 text-sm">
+        Get Started Free (5 Credits)
+      </button>
+      <a href="#pricing-section" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-semibold px-6 py-3.5 rounded-xl transition-all text-sm flex items-center">
+        View Pricing
+      </a>
     </div>
   </div>
 
-  <footer class="border-t border-slate-800/80 bg-[#080d1a] py-8 text-center text-xs text-slate-5
+  <!-- How AI Readability Works Grid -->
+  <div class="space-y-6">
+    <div class="text-center space-y-2">
+      <h2 class="text-2xl font-bold text-white">How AI Readability Works</h2>
+      <p class="text-slate-400 text-sm">Automated diagnostic scanning designed specifically for AI models.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-[#101728] border border-slate-800 rounded-2xl p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold text-lg">🤖</div>
+        <h3 class="text-lg font-bold text-white">Bot Accessibility Check</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          Scans your <code class="text-emerald-400 bg-[#080d1a] px-1.5 py-0.5 rounded">robots.txt</code> file to ensure AI crawlers like GPTBot, ClaudeBot, and PerplexityBot are not blocked.
+        </p>
+      </div>
+
+      <div class="bg-[#101728] border border-slate-800 rounded-2xl p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-lg">🗺️</div>
+        <h3 class="text-lg font-bold text-white">Sitemap Verification</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          Verifies <code class="text-emerald-400 bg-[#080d1a] px-1.5 py-0.5 rounded">sitemap.xml</code> configuration to ensure AI engines map and index deep pages.
+        </p>
+      </div>
+
+      <div class="bg-[#101728] border border-slate-800 rounded-2xl p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-lg">🏷️</div>
+        <h3 class="text-lg font-bold text-white">Schema JSON-LD Parsing</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          Detects structured schema data so LLMs extract details about products, pricing, and organization without hallucinations.
+        </p>
+      </div>
+
+      <div class="bg-[#101728] border border-slate-800 rounded-2xl p-6 space-y-3">
+        <div class="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold text-lg">📄</div>
+        <h3 class="text-lg font-bold text-white">Semantic HTML Structure</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          Evaluates page containers (<code class="text-purple-300 bg-[#080d1a] px-1.5 py-0.5 rounded">&lt;main&gt;</code>, <code class="text-purple-300 bg-[#080d1a] px-1.5 py-0.5 rounded">&lt;article&gt;</code>) to verify content clarity.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing Cards -->
+  <div id="pricing-section" class="space-y-6 pt-6">
+    <div class="text-center space-y-2">
+      <h2 class="text-2xl font-bold text-white">Simple, Transparent Pricing</h2>
+      <p class="text-slate-400 text-sm">Start diagnosing your web properties with free credits.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+      <div class="bg-[#101728] border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-6">
+        <div class="space-y-3">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">STARTER</span>
+          <div class="text-3xl font-extrabold text-white">$0</div>
+          <p class="text-xs text-slate-400">Ideal for testing personal websites or single stores.</p>
+          <ul class="text-xs text-slate-300 space-y-2.5 pt-2">
+            <li class="flex items-center gap-2"><span class="text-blue-400 font-bold">✓</span> 5 Free Audit Credits on sign-up</li>
+            <li class="flex items-center gap-2"><span class="text-blue-400 font-bold">✓</span> Full 100-Point Score Breakdown</li>
+            <li class="flex items-center gap-2"><span class="text-blue-400 font-bold">✓</span> Automated Code Fix Recommendations</li>
+          </ul>
+        </div>
+        <button onclick="openAuthModal('signup')" class="w-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold py-2.5 rounded-xl text-xs transition-all">
+          Create Free Account
+        </button>
+      </div>
+
+      <div class="bg-[#101728] border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-6 relative">
+        <div class="absolute top-3 right-3 bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+          COMING SOON
+        </div>
+        <div class="space-y-3">
+          <span class="text-xs font-bold uppercase tracking-wider text-blue-400">PRO / AGENCY</span>
+          <div class="text-3xl font-extrabold text-white">$29 <span class="text-xs text-slate-500 font-normal">/ month</span></div>
+          <p class="text-xs text-slate-400">For agencies managing multiple client storefronts.</p>
+          <ul class="text-xs text-slate-300 space-y-2.5 pt-2">
+            <li class="flex items-center gap-2"><span class="text-blue-400 font-bold">✓</span> 100 Audits / Month</li>
+            <li class="flex items-center gap-2"><span class="text-blue-400 font-bold">✓</span> Continuous Monitoring & Alerting</li>
+            <li class="flex items-center gap-2"><span class="text-blue-400 font-bold">✓</span> White-label PDF Audit Reports</li>
+          </ul>
+        </div>
+        <button disabled class="w-full bg-slate-800 text-slate-500 font-semibold py-2.5 rounded-xl text-xs cursor-not-allowed">
+          Waitlist Only
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="space-y-6 pt-6">
+    <div class="text-center space-y-2">
+      <h2 class="text-2xl font-bold text-white">Frequently Asked Questions</h2>
+      <p class="text-slate-400 text-sm">Need help understanding AI readability?</p>
+    </div>
+
+    <div class="max-w-3xl mx-auto space-y-4">
+      <details class="bg-[#101728] border border-slate-800 rounded-xl p-4 group cursor-pointer" open>
+        <summary class="text-sm font-bold text-white flex justify-between items-center">
+          What is AI Readability and why does it matter?
+          <span class="text-slate-500 group-open:rotate-180 transition-transform">▲</span>
+        </summary>
+        <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+          AI search tools like Perplexity, ChatGPT, and Google AI Overviews read web pages directly to summarize answers for users. If your website lacks semantic HTML, blocks crawler bots, or omits JSON-LD schema, AI models may ignore or misrepresent your business.
+        </p>
+      </details>
+
+      <details class="bg-[#101728] border border-slate-800 rounded-xl p-4 group cursor-pointer">
+        <summary class="text-sm font-bold text-white flex justify-between items-center">
+          How do audit credits work?
+          <span class="text-slate-500 group-open:rotate-180 transition-transform">▲</span>
+        </summary>
+        <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+          Every new user account receives 5 complimentary credits upon registration. Each web address audit consumes 1 credit.
+        </p>
+      </details>
+
+      <details class="bg-[#101728] border border-slate-800 rounded-xl p-4 group cursor-pointer">
+        <summary class="text-sm font-bold text-white flex justify-between items-center">
+          How do I apply the fixes provided by the audit?
+          <span class="text-slate-500 group-open:rotate-180 transition-transform">▲</span>
+        </summary>
+        <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+          Simply copy the code snippets generated in your audit results and paste them into your website’s HTML template, CMS, or root server directory.
+        </p>
+      </details>
+    </div>
+  </div>
+
+</div>
