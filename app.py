@@ -1,14 +1,26 @@
 import os
-import re
+import random
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 from flask import Flask, jsonify, render_template, request, session
+from flask_mail import Mail, Message
 import requests
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "super-secret-key-change-me")
 
-# In-memory user database for tracking credits/subscriptions (Use a database in production)
+# SMTP Mail Setup (Configure environment variables in Vercel)
+app.config["MAIL_SERVER"] = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+app.config["MAIL_PORT"] = int(os.environ.get("MAIL_PORT", 587))
+app.config["MAIL_USE_TLS"] = True
+app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")  # Your email
+app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")  # App Password
+app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_USERNAME")
+
+mail = Mail(app)
+
+# In-memory storage for pending OTPs and verified users
+PENDING_OTPS = {}
 USERS_DB = {}
 
 
@@ -17,15 +29,51 @@ def home():
     return render_template("index.html")
 
 
-@app.route("/login", methods=["POST"])
-def login():
+@app.route("/send-otp", methods=["POST"])
+def send_otp():
     data = request.get_json() or {}
     email = data.get("email", "").strip().lower()
 
-    if not email:
-        return jsonify({"error": "Email is required"}), 400
+    if not email or "@" not in email:
+        return jsonify({"error": "Valid email is required"}), 400
 
-    # Create user if they don't exist (3 free credits by default)
+    otp = str(random.randint(100000, 999999))
+    PENDING_OTPS[email] = otp
+
+    # If SMTP is not configured yet, fallback to console log for testing
+    if not app.config["MAIL_USERNAME"]:
+        print(f"[TEST MODE] OTP for {email}: {otp}")
+        return jsonify(
+            {
+                "success": True,
+                "message": "OTP generated (Check server logs in dev mode)",
+            }
+        )
+
+    try:
+        msg = Message(
+            "Your Verification Code - AI Readability Audit",
+            recipients=[email],
+            body=f"Your 6-digit verification code is: {otp}\n\nThis code is valid for 10 minutes.",
+        )
+        mail.send(msg)
+        return jsonify({"success": True, "message": "OTP sent to your email!"})
+    except Exception as e:
+        return jsonify({"error": f"Failed to send email: {str(e)}"}), 500
+
+
+@app.route("/verify-otp", methods=["POST"])
+def verify_otp():
+    data = request.get_json() or {}
+    email = data.get("email", "").strip().lower()
+    user_otp = data.get("otp", "").strip()
+
+    if PENDING_OTPS.get(email) != user_otp:
+        return jsonify({"error": "Invalid or expired verification code"}), 400
+
+    # OTP verified successfully
+    del PENDING_OTPS[email]
+
     if email not in USERS_DB:
         USERS_DB[email] = {"credits": 3, "is_pro": False}
 
@@ -46,7 +94,6 @@ def audit():
 
     user = USERS_DB[user_email]
 
-    # Check credit limit for free users
     if not user["is_pro"] and user["credits"] <= 0:
         return jsonify({"error": "Credit limit reached"}), 429
 
@@ -68,19 +115,14 @@ def audit():
         html_content = response.text
         soup = BeautifulSoup(html_content, "html.parser")
 
-        # 1. Bot Accessibility / Robots.txt Check
         bot_score = 25
         try:
             robots_res = requests.get(f"{base_url}/robots.txt", timeout=5)
-            if (
-                robots_res.status_code == 200
-                and "Disallow: /" in robots_res.text
-            ):
+            if robots_res.status_code == 200 and "Disallow: /" in robots_res.text:
                 bot_score = 10
         except Exception:
             bot_score = 15
 
-        # 2. Sitemap Check
         sitemap_score = 0
         try:
             sitemap_res = requests.get(f"{base_url}/sitemap.xml", timeout=5)
@@ -89,23 +131,16 @@ def audit():
         except Exception:
             sitemap_score = 0
 
-        # 3. Schema JSON-LD Check
-        schema_scripts = soup.find_all(
-            "script", type="application/ld+json"
-        )
+        schema_scripts = soup.find_all("script", type="application/ld+json")
         json_ld_score = 25 if len(schema_scripts) > 0 else 0
 
-        # 4. Semantic HTML Check
         semantic_tags = soup.find_all(
             ["header", "main", "footer", "article", "section", "nav"]
         )
         semantic_score = 25 if len(semantic_tags) >= 3 else 10
 
-        overall_score = (
-            bot_score + sitemap_score + json_ld_score + semantic_score
-        )
+        overall_score = bot_score + sitemap_score + json_ld_score + semantic_score
 
-        # Deduct credit if not pro
         if not user["is_pro"]:
             user["credits"] -= 1
 
