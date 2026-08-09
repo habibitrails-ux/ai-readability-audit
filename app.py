@@ -4,16 +4,37 @@ import re
 from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session
 from concurrent.futures import ThreadPoolExecutor
 
 import os
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, template_folder=os.path.join(base_dir, 'templates'))
-
+app.secret_key = 'super_secret_app_key'  # Required for sessions
+users_db = {}  # User store for tracking credits
 AI_BOTS = ["GPTBot", "PerplexityBot", "ClaudeBot", "Google-Extended", "ChatGPT-User"]
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json() or {}
+    email = data.get('email')
+    
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
 
+    if email not in users_db:
+        users_db[email] = {
+            "credits": 3,
+            "is_pro": False
+        }
+    
+    session['user'] = email
+    return jsonify({
+        "success": True, 
+        "user": email, 
+        "credits": users_db[email]["credits"], 
+        "is_pro": users_db[email]["is_pro"]
+    })
 def check_robots_txt(target_url, headers):
     parsed = urlparse(target_url)
     robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
@@ -210,6 +231,15 @@ def home():
 
 @app.route('/audit', methods=['GET', 'POST'])
 def run_audit():
+    user_email = session.get('user')
+    
+    if not user_email or user_email not in users_db:
+        return jsonify({"error": "AUTH_REQUIRED", "message": "Please log in first."}), 401
+    
+    user = users_db[user_email]
+    
+    if not user['is_pro'] and user['credits'] <= 0:
+        return jsonify({"error": "LIMIT_REACHED", "message": "Free limit reached."}), 429
     if request.method == 'GET':
         url = request.args.get('url')
     else:
@@ -278,7 +308,8 @@ def run_audit():
         )
 
     total_score = robots_res['score'] + sitemap_res['score'] + schema_res['score'] + semantic_res['score']
-
+if not user['is_pro']:
+    user['credits'] -= 1
     return jsonify({
         "url": url,
         "overall_ai_score": total_score,
