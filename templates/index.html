@@ -22,7 +22,7 @@
         <span class="font-bold text-lg tracking-tight">ai-readability.app</span>
       </div>
       <div id="auth-status" class="flex items-center space-x-3 text-sm font-medium">
-        <button onclick="openAuthModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all">Sign In / Sign Up</button>
+        <button onclick="openAuthModal('login')" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all">Sign In / Sign Up</button>
       </div>
     </div>
   </header>
@@ -176,12 +176,46 @@
     </div>
   </div>
 
+  <!-- Pricing Upgrade Modal -->
+  <div id="pricing-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
+    <div class="bg-[#101728] border border-blue-900/60 rounded-3xl p-8 max-w-lg w-full space-y-6 shadow-2xl relative text-center">
+      <button onclick="closePricingModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
+      <div class="space-y-2">
+        <span class="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">Free Credits Exhausted</span>
+        <h2 class="text-3xl font-black text-white">Upgrade Your Plan</h2>
+        <p class="text-slate-400 text-sm">You have used your 2 free audits. Upgrade to continue auditing websites and getting automated fix codes.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+        <div class="bg-[#080d1a] border border-slate-800 p-5 rounded-2xl flex flex-col justify-between space-y-4">
+          <div>
+            <h3 class="font-bold text-white text-base">Pro Monthly</h3>
+            <div class="mt-2 text-2xl font-black text-white">$19 <span class="text-xs font-normal text-slate-400">/mo</span></div>
+            <p class="text-xs text-slate-400 mt-2">100 audits / month + complete schema generators</p>
+          </div>
+          <button onclick="alert('Checkout integration ready!')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-xl text-xs transition-all shadow-md">Upgrade Pro</button>
+        </div>
+
+        <div class="bg-[#080d1a] border border-blue-500/50 p-5 rounded-2xl flex flex-col justify-between space-y-4 relative overflow-hidden">
+          <div class="absolute top-0 right-0 bg-blue-600 text-[10px] font-extrabold text-white px-2 py-0.5 rounded-bl-lg">POPULAR</div>
+          <div>
+            <h3 class="font-bold text-white text-base">Unlimited Lifetime</h3>
+            <div class="mt-2 text-2xl font-black text-white">$49 <span class="text-xs font-normal text-slate-400">one-time</span></div>
+            <p class="text-xs text-slate-400 mt-2">Unlimited website audits & re-tests forever</p>
+          </div>
+          <button onclick="alert('Checkout integration ready!')" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-2 rounded-xl text-xs transition-all shadow-md">Get Lifetime</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer class="border-t border-slate-800/80 bg-[#080d1a] py-8 text-center text-xs text-slate-500">
     &copy; 2026 ai-readability.app
   </footer>
 
   <script>
     let currentAuthMode = 'login';
+    let currentUser = null;
 
     window.addEventListener('DOMContentLoaded', checkUserSession);
 
@@ -190,20 +224,36 @@
         const res = await fetch('/me');
         const data = await res.json();
         if(data.authenticated) {
+          currentUser = data;
           renderLoggedInState(data.email, data.credits);
+        } else {
+          currentUser = null;
+          renderLoggedOutState();
         }
       } catch(e) {}
     }
 
     function renderLoggedInState(email, credits) {
       document.getElementById('auth-status').innerHTML = `
-        <span class="bg-slate-800 text-blue-400 px-3 py-1.5 rounded-lg text-xs font-semibold">${email} (${credits} credits)</span>
+        <span class="bg-slate-800 text-blue-400 px-3 py-1.5 rounded-lg text-xs font-semibold">${email} (${credits} credits left)</span>
         <button onclick="handleLogout()" class="text-xs text-slate-400 hover:text-white">Logout</button>
       `;
     }
 
-    function openAuthModal() { document.getElementById('auth-modal').classList.remove('hidden'); }
+    function renderLoggedOutState() {
+      document.getElementById('auth-status').innerHTML = `
+        <button onclick="openAuthModal('login')" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all">Sign In / Sign Up</button>
+      `;
+    }
+
+    function openAuthModal(mode = 'signup') { 
+      switchAuthTab(mode);
+      document.getElementById('auth-modal').classList.remove('hidden'); 
+    }
     function closeAuthModal() { document.getElementById('auth-modal').classList.add('hidden'); }
+
+    function openPricingModal() { document.getElementById('pricing-modal').classList.remove('hidden'); }
+    function closePricingModal() { document.getElementById('pricing-modal').classList.add('hidden'); }
 
     function switchAuthTab(mode) {
       currentAuthMode = mode;
@@ -223,13 +273,19 @@
       });
       const data = await res.json();
       if(res.ok) {
+        currentUser = data;
         renderLoggedInState(data.email, data.credits);
         closeAuthModal();
+      } else {
+        const modalMsg = document.getElementById('modal-msg');
+        modalMsg.innerText = data.error || "Authentication failed.";
+        modalMsg.className = "text-xs text-center p-2 rounded-lg text-red-400 bg-red-950/40 border border-red-800/40 block";
       }
     }
 
     async function handleLogout() {
       await fetch('/logout', { method: 'POST' });
+      currentUser = null;
       location.reload();
     }
 
@@ -240,6 +296,12 @@
       const btnText = document.getElementById('btn-text');
 
       errBox.classList.add('hidden');
+
+      if(!currentUser) {
+        openAuthModal('signup');
+        return;
+      }
+
       if(!urlInput) {
         errBox.innerText = "Please enter a valid URL.";
         errBox.classList.remove('hidden');
@@ -257,10 +319,26 @@
         const data = await res.json();
         btnText.innerText = "Check AI Readability";
 
+        if(res.status === 401) {
+          openAuthModal('login');
+          return;
+        }
+
+        if(res.status === 402) {
+          openPricingModal();
+          return;
+        }
+
         if(!res.ok) {
           errBox.innerText = data.error || "Audit failed.";
           errBox.classList.remove('hidden');
           return;
+        }
+
+        // Update active user credit UI
+        if(typeof data.remaining_credits !== 'undefined') {
+          currentUser.credits = data.remaining_credits;
+          renderLoggedInState(currentUser.email, currentUser.credits);
         }
 
         const totalScore = Number(data.overall_score) || 0;
@@ -311,13 +389,4 @@
       } catch(e) {
         btnText.innerText = "Check AI Readability";
         errBox.innerText = "Network execution error.";
-        errBox.classList.remove('hidden');
-      }
-    }
-
-    function escapeHtml(text) {
-      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
-  </script>
-</body>
-</html>
+        errBox.classList.remove('hidd
