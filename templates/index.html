@@ -66,9 +66,9 @@
       </div>
       <div class="flex flex-col sm:flex-row gap-3">
         <input id="url-input" type="url" placeholder="https://example.com" class="flex-1 bg-[#080d1a] border border-slate-800 rounded-xl px-4 py-3.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm">
-        <button onclick="runAudit()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-blue-600/20 whitespace-nowrap">
+        <button id="btn-submit" onclick="runAudit()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-blue-600/20 whitespace-nowrap">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-          <span>Check AI Readability</span>
+          <span id="btn-text">Check AI Readability</span>
         </button>
       </div>
       <div id="error-msg" class="hidden text-xs text-red-400 bg-red-950/40 border border-red-800/40 p-3 rounded-lg"></div>
@@ -100,7 +100,7 @@
             <span id="badge-access" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">GOOD</span>
           </div>
           <div class="mt-4 flex items-baseline gap-2">
-            <span id="score-access-num" class="text-4xl font-extrabold text-white">50</span>
+            <span id="score-access-num" class="text-4xl font-extrabold text-white">0</span>
             <span class="text-sm font-semibold text-slate-500">/ 50</span>
           </div>
           <p class="text-xs text-slate-400 mt-2">robots.txt permissions & sitemap verification</p>
@@ -113,7 +113,7 @@
             <span id="badge-context" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-400 border border-amber-800">NEEDS WORK</span>
           </div>
           <div class="mt-4 flex items-baseline gap-2">
-            <span id="score-context-num" class="text-4xl font-extrabold text-white">10</span>
+            <span id="score-context-num" class="text-4xl font-extrabold text-white">0</span>
             <span class="text-sm font-semibold text-slate-500">/ 50</span>
           </div>
           <p class="text-xs text-slate-400 mt-2">JSON-LD schemas & semantic tags parsing</p>
@@ -327,4 +327,4 @@
           document.getElementById('modal-step-1').classList.add('hidden');
           document.getElementById('modal-step-2').classList.remove('hidden');
           document.getElementById('modal-title').innerText = "Enter Verification Code";
-          msgBox.className = "text-xs text-center text-emerald-4
+          msgBox.className = "text-x
