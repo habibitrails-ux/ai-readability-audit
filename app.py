@@ -6,13 +6,16 @@ from flask import Flask, render_template, request, jsonify, session
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "super-secret-key-12345")
 
-USERS_DB = {}
+# Secret key for signing session cookies
+app.secret_key = os.environ.get("SESSION_SECRET", "ai-readability-audit-secret-key-98765")
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = True
 
 @app.after_request
 def add_cors_headers(response):
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+    response.headers["Access-Control-Allow-Credentials"] = "true"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
     response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
     return response
@@ -132,11 +135,12 @@ def index():
 @app.route("/me", methods=["GET"])
 def get_current_user():
     user_email = session.get("user")
-    if user_email and user_email in USERS_DB:
+    credits = session.get("credits", 0)
+    if user_email:
         return jsonify({
             "authenticated": True,
             "email": user_email,
-            "credits": USERS_DB[user_email]["credits"]
+            "credits": credits
         }), 200
     return jsonify({"authenticated": False}), 200
 
@@ -153,15 +157,9 @@ def signup():
     if not email or not password:
         return jsonify({"error": "Email and password required"}), 400
 
-    if email in USERS_DB:
-        return jsonify({"error": "Account already exists."}), 400
-
-    # Start user with exactly 2 free credits
-    USERS_DB[email] = {
-        "password": generate_password_hash(password),
-        "credits": 2
-    }
+    # Persist session directly in signed cookie
     session["user"] = email
+    session["credits"] = 2  # Start with 2 free credits
 
     return jsonify({"message": "Success", "email": email, "credits": 2}), 200
 
@@ -175,17 +173,19 @@ def login():
     email = data.get("email", "").strip().lower()
     password = data.get("password", "").strip()
 
-    user = USERS_DB.get(email)
-    if not user or not check_password_hash(user["password"], password):
-        return jsonify({"error": "Invalid credentials"}), 401
+    if not email or not password:
+        return jsonify({"error": "Email and password required"}), 400
 
     session["user"] = email
-    return jsonify({"message": "Success", "email": email, "credits": user["credits"]}), 200
+    if "credits" not in session:
+        session["credits"] = 2
+
+    return jsonify({"message": "Success", "email": email, "credits": session["credits"]}), 200
 
 
 @app.route("/logout", methods=["POST", "OPTIONS"])
 def logout():
-    session.pop("user", None)
+    session.clear()
     return jsonify({"message": "Logged out"}), 200
 
 
@@ -195,11 +195,11 @@ def audit():
         return jsonify({"status": "ok"}), 200
 
     user_email = session.get("user")
-    if not user_email or user_email not in USERS_DB:
+    if not user_email:
         return jsonify({"error": "auth_required", "message": "Please sign in or create an account to run an audit."}), 401
 
-    user = USERS_DB[user_email]
-    if user["credits"] <= 0:
+    user_credits = session.get("credits", 0)
+    if user_credits <= 0:
         return jsonify({"error": "out_of_credits", "message": "You have used all your free credits. Upgrade to run more audits."}), 402
 
     try:
@@ -208,11 +208,11 @@ def audit():
         if not url:
             return jsonify({"error": "URL required"}), 400
 
-        # Deduct 1 credit per audit
-        user["credits"] -= 1
+        # Deduct 1 credit
+        session["credits"] = user_credits - 1
 
         result = audit_url(url)
-        result["remaining_credits"] = user["credits"]
+        result["remaining_credits"] = session["credits"]
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
