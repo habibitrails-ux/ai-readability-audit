@@ -9,17 +9,17 @@ import requests
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "super-secret-key-change-me")
 
-# SMTP Mail Setup (Configure environment variables in Vercel)
+# SMTP Mail Setup (Configured via Vercel Environment Variables)
 app.config["MAIL_SERVER"] = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
 app.config["MAIL_PORT"] = int(os.environ.get("MAIL_PORT", 587))
 app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")  # Your email
-app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")  # App Password
+app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")  # Your email address
+app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")  # 16-char App Password
 app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_USERNAME")
 
 mail = Mail(app)
 
-# In-memory storage for pending OTPs and verified users
+# Storage for pending OTPs and verified user credits
 PENDING_OTPS = {}
 USERS_DB = {}
 
@@ -35,14 +35,13 @@ def send_otp():
     email = data.get("email", "").strip().lower()
 
     if not email or "@" not in email:
-        return jsonify({"error": "Valid email is required"}), 400
+        return jsonify({"error": "Valid email address is required"}), 400
 
     otp = str(random.randint(100000, 999999))
     PENDING_OTPS[email] = otp
 
-    # If SMTP is not configured yet, fallback to console log for testing
     if not app.config["MAIL_USERNAME"]:
-        print(f"[TEST MODE] OTP for {email}: {otp}")
+        print(f"[DEVELOPMENT MODE] OTP for {email}: {otp}")
         return jsonify(
             {
                 "success": True,
@@ -51,10 +50,15 @@ def send_otp():
         )
 
     try:
+        sender_email = app.config["MAIL_USERNAME"]
         msg = Message(
-            "Your Verification Code - AI Readability Audit",
+            subject="Your Verification Code",
+            sender=("AI Readability Audit", sender_email),
             recipients=[email],
-            body=f"Your 6-digit verification code is: {otp}\n\nThis code is valid for 10 minutes.",
+            body=(
+                f"Your 6-digit verification code is: {otp}\n\n"
+                "This code will expire in 10 minutes. If you did not request this code, please ignore this email."
+            ),
         )
         mail.send(msg)
         return jsonify({"success": True, "message": "OTP sent to your email!"})
@@ -71,7 +75,7 @@ def verify_otp():
     if PENDING_OTPS.get(email) != user_otp:
         return jsonify({"error": "Invalid or expired verification code"}), 400
 
-    # OTP verified successfully
+    # Remove code after verification
     del PENDING_OTPS[email]
 
     if email not in USERS_DB:
