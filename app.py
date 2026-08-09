@@ -1,5 +1,4 @@
 import os
-import re
 import urllib.parse
 import requests
 from bs4 import BeautifulSoup
@@ -157,13 +156,14 @@ def signup():
     if email in USERS_DB:
         return jsonify({"error": "Account already exists."}), 400
 
+    # Start user with exactly 2 free credits
     USERS_DB[email] = {
         "password": generate_password_hash(password),
-        "credits": 5
+        "credits": 2
     }
     session["user"] = email
 
-    return jsonify({"message": "Success", "email": email, "credits": 5}), 200
+    return jsonify({"message": "Success", "email": email, "credits": 2}), 200
 
 
 @app.route("/login", methods=["POST", "OPTIONS"])
@@ -194,13 +194,25 @@ def audit():
     if request.method == "OPTIONS":
         return jsonify({"status": "ok"}), 200
 
+    user_email = session.get("user")
+    if not user_email or user_email not in USERS_DB:
+        return jsonify({"error": "auth_required", "message": "Please sign in or create an account to run an audit."}), 401
+
+    user = USERS_DB[user_email]
+    if user["credits"] <= 0:
+        return jsonify({"error": "out_of_credits", "message": "You have used all your free credits. Upgrade to run more audits."}), 402
+
     try:
         data = request.get_json(silent=True) or {}
         url = data.get("url", "").strip()
         if not url:
             return jsonify({"error": "URL required"}), 400
 
+        # Deduct 1 credit per audit
+        user["credits"] -= 1
+
         result = audit_url(url)
+        result["remaining_credits"] = user["credits"]
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
