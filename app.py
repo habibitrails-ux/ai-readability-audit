@@ -1,326 +1,136 @@
 import os
-import json
 import re
 from urllib.parse import urlparse
-import requests
 from bs4 import BeautifulSoup
-from flask import Flask, request, jsonify, render_template, session
-from concurrent.futures import ThreadPoolExecutor
+from flask import Flask, jsonify, render_template, request, session
+import requests
 
-import os
+app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "super-secret-key-change-me")
 
-base_dir = os.path.dirname(os.path.abspath(__file__))
-app = Flask(__name__, template_folder=os.path.join(base_dir, 'templates'))
-app.secret_key = 'super_secret_app_key'  # Required for sessions
-users_db = {}  # User store for tracking credits
-AI_BOTS = ["GPTBot", "PerplexityBot", "ClaudeBot", "Google-Extended", "ChatGPT-User"]
-@app.route('/login', methods=['POST'])
+# In-memory user database for tracking credits/subscriptions (Use a database in production)
+USERS_DB = {}
+
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+
+@app.route("/login", methods=["POST"])
 def login():
     data = request.get_json() or {}
-    email = data.get('email')
-    
+    email = data.get("email", "").strip().lower()
+
     if not email:
         return jsonify({"error": "Email is required"}), 400
 
-    if email not in users_db:
-        users_db[email] = {
-            "credits": 3,
-            "is_pro": False
-        }
-    
-    session['user'] = email
-    return jsonify({
-        "success": True, 
-        "user": email, 
-        "credits": users_db[email]["credits"], 
-        "is_pro": users_db[email]["is_pro"]
-    })
-def check_robots_txt(target_url, headers):
-    parsed = urlparse(target_url)
-    robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
-    status = {bot: True for bot in AI_BOTS}
-    
-    try:
-        res = requests.get(robots_url, headers=headers, timeout=4)
-        if res.status_code == 200:
-            content = res.text.lower()
-            for bot in AI_BOTS:
-                bot_lower = bot.lower()
-                if f"user-agent: {bot_lower}\ndisallow: /" in content or "user-agent: *\ndisallow: /" in content:
-                    status[bot] = False
-    except Exception:
-        pass
-        
-    allowed_count = sum(1 for allowed in status.values() if allowed)
-    score = int((allowed_count / len(AI_BOTS)) * 25)
-    return {"score": score, "details": status}
+    # Create user if they don't exist (3 free credits by default)
+    if email not in USERS_DB:
+        USERS_DB[email] = {"credits": 3, "is_pro": False}
 
-def check_sitemap(target_url, headers, scraper_key):
-    parsed = urlparse(target_url)
-    sitemap_url = f"{parsed.scheme}://{parsed.netloc}/sitemap.xml"
-    
-    try:
-        res = requests.get(sitemap_url, headers=headers, timeout=4)
-        if res.status_code == 200 and ("xml" in res.headers.get("Content-Type", "").lower() or "<urlset" in res.text or "<sitemapindex" in res.text):
-            return {"score": 25, "found": True, "sitemap_url": sitemap_url}
-    except Exception:
-        pass
+    session["user_email"] = email
+    user = USERS_DB[email]
 
-    if scraper_key:
-        try:
-            payload = {'api_key': scraper_key, 'url': sitemap_url}
-            res = requests.get('http://api.scraperapi.com', params=payload, timeout=5)
-            if res.status_code == 200 and ("xml" in res.text.lower() or "<urlset" in res.text or "<sitemapindex" in res.text):
-                return {"score": 25, "found": True, "sitemap_url": sitemap_url}
-        except Exception:
-            pass
-        
-    return {"score": 0, "found": False, "sitemap_url": sitemap_url, "issue": "sitemap.xml missing or unreachable"}
-
-def check_semantic_html(soup):
-    found_tags = []
-    missing_tags = []
-    
-    check_tags = {
-        "h1": "Main Product Heading (<h1>)",
-        "main": "Main Content Container (<main>)",
-        "header": "Page Header (<header>)",
-        "article": "Product / Article Wrapper (<article>)"
-    }
-    
-    for tag, label in check_tags.items():
-        if soup.find(tag):
-            found_tags.append(tag)
-        else:
-            missing_tags.append(label)
-            
-    score = int((len(found_tags) / len(check_tags)) * 25)
-    
-    return {
-        "score": score,
-        "found_tags": found_tags,
-        "missing_tags": missing_tags
-    }
-
-def extract_schema_json_ld(soup, html_content):
-    scripts = soup.find_all('script', type='application/ld+json')
-    product_schema = None
-
-    def search_for_product(data):
-        if isinstance(data, dict):
-            schema_type = data.get('@type')
-            if schema_type == 'Product' or (isinstance(schema_type, list) and 'Product' in schema_type):
-                return data
-            for value in data.values():
-                res = search_for_product(value)
-                if res:
-                    return res
-        elif isinstance(data, list):
-            for item in data:
-                res = search_for_product(item)
-                if res:
-                    return res
-        return None
-
-    # 1. Standard JSON-LD
-    for script in scripts:
-        if not script.string:
-            continue
-        try:
-            data = json.loads(script.string)
-            found = search_for_product(data)
-            if found:
-                product_schema = found
-                break
-        except (json.JSONDecodeError, TypeError):
-            continue
-
-    if product_schema:
-        required_fields = ['name', 'image', 'description', 'offers']
-        missing = [field for field in required_fields if field not in product_schema]
-        
-        offers = product_schema.get('offers', {})
-        if isinstance(offers, list) and len(offers) > 0:
-            offers = offers[0]
-        
-        if isinstance(offers, dict):
-            if 'price' not in offers and 'lowPrice' not in offers:
-                missing.append('offers.price')
-
-        points = 25 - (len(missing) * 5)
-        return {
-            "score": max(0, points),
-            "found": True,
-            "format": "JSON-LD",
-            "missing_fields": missing,
-            "extracted_schema": product_schema
-        }
-
-    # 2. Open Graph & Meta Fallback
-    og_title = soup.find('meta', property='og:title') or soup.find('meta', attrs={'name': 'og:title'})
-    og_image = soup.find('meta', property='og:image') or soup.find('meta', attrs={'name': 'og:image'})
-    og_desc = soup.find('meta', property='og:description') or soup.find('meta', attrs={'name': 'og:description'})
-    og_price = (
-        soup.find('meta', property='product:price:amount') or
-        soup.find('meta', property='og:price:amount') or
-        soup.find('meta', attrs={'name': 'twitter:data1'}) or
-        soup.find('meta', attrs={'itemprop': 'price'})
+    return jsonify(
+        {"success": True, "credits": user["credits"], "is_pro": user["is_pro"]}
     )
 
-    og_data = {}
-    if og_title and og_title.get('content'):
-        og_data['name'] = og_title['content']
-    if og_image and og_image.get('content'):
-        og_data['image'] = og_image['content']
-    if og_desc and og_desc.get('content'):
-        og_data['description'] = og_desc['content']
-    if og_price and og_price.get('content'):
-        og_data['price'] = og_price['content']
 
-    # 3. Regex Fallback
-    if 'price' not in og_data:
-        price_match = re.search(r'"price"\s*:\s*"?(\d+(?:\.\d{2})?)"?', html_content)
-        if price_match:
-            val = float(price_match.group(1))
-            og_data['price'] = f"{val/100:.2f}" if val > 1000 else f"{val:.2f}"
+@app.route("/audit", methods=["POST"])
+def audit():
+    user_email = session.get("user_email")
 
-    if og_data.get('name') or og_data.get('image'):
-        missing = [field for field in ['name', 'image', 'description', 'price'] if field not in og_data]
-        points = 25 - (len(missing) * 5)
-        return {
-            "score": max(5, points),
-            "found": True,
-            "format": "OpenGraph / Meta Tags",
-            "missing_fields": missing,
-            "extracted_schema": og_data
-        }
+    if not user_email or user_email not in USERS_DB:
+        return jsonify({"error": "Authentication required"}), 401
 
-    return {"score": 0, "found": False, "missing_fields": ["Product Schema & Meta Tags Missing"]}
+    user = USERS_DB[user_email]
 
-def fetch_page_html(url, scraper_key):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9'
-    }
+    # Check credit limit for free users
+    if not user["is_pro"] and user["credits"] <= 0:
+        return jsonify({"error": "Credit limit reached"}), 429
+
+    data = request.get_json() or {}
+    target_url = data.get("url", "").strip()
+
+    if not target_url:
+        return jsonify({"error": "URL is required"}), 400
+
+    if not target_url.startswith(("http://", "https://")):
+        target_url = "https://" + target_url
+
+    parsed_url = urlparse(target_url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
     try:
-        res = requests.get(url, headers=headers, timeout=4)
-        if res.status_code == 200 and len(res.text) > 1500:
-            return res.text
-    except Exception:
-        pass
+        headers = {"User-Agent": "Mozilla/5.0 (AI-Readability-Bot/1.0)"}
+        response = requests.get(target_url, headers=headers, timeout=10)
+        html_content = response.text
+        soup = BeautifulSoup(html_content, "html.parser")
 
-    if scraper_key:
+        # 1. Bot Accessibility / Robots.txt Check
+        bot_score = 25
         try:
-            payload = {
-                'api_key': scraper_key,
-                'url': url
-            }
-            res = requests.get('http://api.scraperapi.com', params=payload, timeout=6)
-            if res.status_code == 200 and len(res.text) > 1500:
-                return res.text
+            robots_res = requests.get(f"{base_url}/robots.txt", timeout=5)
+            if (
+                robots_res.status_code == 200
+                and "Disallow: /" in robots_res.text
+            ):
+                bot_score = 10
         except Exception:
-            pass
+            bot_score = 15
 
-    return ""
+        # 2. Sitemap Check
+        sitemap_score = 0
+        try:
+            sitemap_res = requests.get(f"{base_url}/sitemap.xml", timeout=5)
+            if sitemap_res.status_code == 200:
+                sitemap_score = 25
+        except Exception:
+            sitemap_score = 0
 
-@app.route('/')
-def home():
-    return render_template('index.html')
+        # 3. Schema JSON-LD Check
+        schema_scripts = soup.find_all(
+            "script", type="application/ld+json"
+        )
+        json_ld_score = 25 if len(schema_scripts) > 0 else 0
 
-@app.route('/audit', methods=['GET', 'POST'])
-def run_audit():
-    user_email = session.get('user')
-    
-    if not user_email or user_email not in users_db:
-        return jsonify({"error": "AUTH_REQUIRED", "message": "Please log in first."}), 401
-    
-    user = users_db[user_email]
-    
-    if not user['is_pro'] and user['credits'] <= 0:
-        return jsonify({"error": "LIMIT_REACHED", "message": "Free limit reached."}), 429
-    if request.method == 'GET':
-        url = request.args.get('url')
-    else:
-        data = request.get_json(silent=True) or {}
-        url = data.get('url')
+        # 4. Semantic HTML Check
+        semantic_tags = soup.find_all(
+            ["header", "main", "footer", "article", "section", "nav"]
+        )
+        semantic_score = 25 if len(semantic_tags) >= 3 else 10
 
-    if not url:
-        return jsonify({"error": "URL parameter is required"}), 400
-
-    scraper_key = os.environ.get('SCRAPER_API_KEY')
-    std_headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.9'
-    }
-
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        future_robots = executor.submit(check_robots_txt, url, std_headers)
-        future_sitemap = executor.submit(check_sitemap, url, std_headers, scraper_key)
-        future_html = executor.submit(fetch_page_html, url, scraper_key)
-
-        robots_res = future_robots.result()
-        sitemap_res = future_sitemap.result()
-        html = future_html.result()
-
-    if not html:
-        return jsonify({
-            "url": url,
-            "overall_ai_score": robots_res['score'] + sitemap_res['score'],
-            "summary": "Needs Optimization (Cloudflare/Bot Blocked)",
-            "breakdown": {
-                "bot_accessibility": robots_res,
-                "sitemap_status": sitemap_res,
-                "schema_json_ld": {
-                    "score": 0, 
-                    "found": False, 
-                    "issue": "Page content blocked by store firewall",
-                    "recommended_fix": "Add standard JSON-LD schema into your theme <head> tag."
-                },
-                "semantic_html": {"score": 0, "found_tags": [], "missing_tags": ["Blocked by Firewall"]}
-            }
-        })
-
-    soup = BeautifulSoup(html, 'html.parser')
-    schema_res = extract_schema_json_ld(soup, html)
-    semantic_res = check_semantic_html(soup)
-
-    # Generate actionable fix snippet if schema score is low
-    page_title = soup.title.string.strip() if soup.title and soup.title.string else "Product Name"
-    if schema_res['score'] < 25:
-        schema_res['fix_snippet'] = (
-            '<script type="application/ld+json">\n'
-            '{\n'
-            '  "@context": "https://schema.org/",\n'
-            '  "@type": "Product",\n'
-            f'  "name": "{page_title}",\n'
-            '  "description": "Add product description here",\n'
-            '  "offers": {\n'
-            '    "@type": "Offer",\n'
-            '    "priceCurrency": "USD",\n'
-            '    "price": "0.00",\n'
-            '    "availability": "https://schema.org/InStock"\n'
-            '  }\n'
-            '}\n'
-            '</script>'
+        overall_score = (
+            bot_score + sitemap_score + json_ld_score + semantic_score
         )
 
-    total_score = robots_res['score'] + sitemap_res['score'] + schema_res['score'] + semantic_res['score']
-if not user['is_pro']:
-    user['credits'] -= 1
-    return jsonify({
-        "url": url,
-        "overall_ai_score": total_score,
-        "summary": "Ready for AI Agents" if total_score >= 80 else "Needs Optimization",
-        "breakdown": {
-            "bot_accessibility": robots_res,
-            "sitemap_status": sitemap_res,
-            "schema_json_ld": schema_res,
-            "semantic_html": semantic_res
-        }
-    })
+        # Deduct credit if not pro
+        if not user["is_pro"]:
+            user["credits"] -= 1
 
-if __name__ == '__main__':
-    app.run()
+        summary = (
+            f"Audit completed for {parsed_url.netloc}. Found {len(schema_scripts)} JSON-LD blocks "
+            f"and {len(semantic_tags)} semantic HTML elements."
+        )
+
+        return jsonify(
+            {
+                "overall_ai_score": overall_score,
+                "summary": summary,
+                "breakdown": {
+                    "bot_accessibility": {"score": bot_score},
+                    "sitemap_status": {"score": sitemap_score},
+                    "schema_json_ld": {"score": json_ld_score},
+                    "semantic_html": {"score": semantic_score},
+                },
+                "remaining_credits": user["credits"],
+            }
+        )
+
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch site: {str(e)}"}), 500
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
