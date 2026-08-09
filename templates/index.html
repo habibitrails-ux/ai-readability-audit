@@ -3,244 +3,250 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Readability Audit</title>
+  <title>AI Readability Checker — Get Your AI Readability Score</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://assets.lemonsqueezy.com/lemon.js" defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen p-4 md:p-8 font-sans">
-  <div class="max-w-4xl mx-auto space-y-6">
+<body class="bg-[#0b0f19] text-slate-100 min-h-screen flex flex-col justify-between">
 
-    <header class="text-center py-6">
-      <h1 class="text-3xl font-extrabold tracking-tight text-white md:text-4xl">AI Readability Diagnostic</h1>
-      <p class="text-slate-400 mt-2">Audit how effectively AI agents and web crawlers extract your product data.</p>
-    </header>
-
-    <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
-      <form id="auditForm" class="flex flex-col sm:flex-row gap-3">
-        <input 
-          type="url" 
-          id="urlInput" 
-          placeholder="https://example.com/product" 
-          required 
-          class="flex-1 bg-slate-900 text-white border border-slate-700 rounded-lg px-4 py-3 focus:outline-none focus:border-sky-500"
-        />
-        <button 
-          type="submit" 
-          id="submitBtn"
-          class="bg-sky-600 hover:bg-sky-500 text-white font-bold px-6 py-3 rounded-lg transition"
-        >
-          Run Audit
-        </button>
-      </form>
-    </div>
-
-    <div id="statusMessage" class="hidden text-center p-4 rounded-lg bg-slate-800 border border-slate-700 text-slate-300"></div>
-
-    <div id="resultsContainer" class="hidden space-y-6">
-      <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div>
-          <h2 class="text-xl font-bold text-white">Overall AI Readability Score</h2>
-          <p id="summaryText" class="text-slate-400 text-sm mt-1"></p>
-        </div>
-        <div id="scoreBadge" class="text-3xl font-black px-6 py-2 rounded-xl bg-slate-900 text-sky-400 border border-slate-700">
-          0 / 100
-        </div>
+  <!-- Header Navigation -->
+  <header class="border-b border-slate-800 bg-[#0b0f19]/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">⚡</div>
+        <span class="font-bold text-lg tracking-tight">ai-readability.app</span>
       </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="breakdownGrid"></div>
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-400">
+        <a href="#" class="text-white">Checker</a>
+        <a href="#" class="hover:text-white transition-colors">How it works</a>
+        <a href="#" class="hover:text-white transition-colors">AI Overviews</a>
+        <a href="#" class="hover:text-white transition-colors">FAQ</a>
+      </nav>
+      <div id="auth-status" class="text-sm font-medium text-slate-400">
+        <button onclick="openAuthModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all">Sign In</button>
+      </div>
     </div>
+  </header>
 
-  </div>
-
-  <!-- 2-Step OTP Auth Modal -->
-  <div id="authModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center;">
-    <div style="background: #1e293b; color: #fff; padding: 2rem; border-radius: 12px; width: 100%; max-width: 380px; text-align: center; border: 1px solid #334155;">
+  <!-- Hero & Main Tool Section -->
+  <main class="max-w-4xl mx-auto px-6 pt-16 pb-20 w-full flex-grow">
+    
+    <!-- Hero Header -->
+    <div class="text-center space-y-4 mb-10">
+      <div class="inline-flex items-center space-x-2 bg-blue-950/60 border border-blue-800/50 px-3 py-1 rounded-full text-xs font-semibold text-blue-400">
+        <span>⚡ ai-readability — a Diagnostic tool</span>
+      </div>
+      <h1 class="text-4xl md:text-5xl font-extrabold text-white tracking-tight leading-tight">
+        AI Readability Checker — Get Your AI Readability Score
+      </h1>
+      <p class="text-slate-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+        Paste any URL, article, or document and receive an AI Readability Score, grade, and clear recommendations in seconds.
+      </p>
       
-      <!-- Step 1: Email Request -->
-      <div id="otpStep1">
-        <h3 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">Verify Email</h3>
-        <p style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 1.5rem;">Enter your email to receive a 6-digit verification code.</p>
-        <input type="email" id="authEmail" placeholder="you@example.com" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; margin-bottom: 1rem;">
-        <button onclick="requestOTP()" id="sendOtpBtn" style="width: 100%; padding: 0.75rem; border-radius: 8px; background: #0284c7; color: #fff; font-weight: bold; border: none; cursor: pointer;">Send Verification Code</button>
+      <!-- Feature Pills -->
+      <div class="flex items-center justify-center space-x-6 text-xs text-slate-400 pt-2 font-medium">
+        <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> Private</span>
+        <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> Fast Diagnostics</span>
+        <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> 3 Free Credits</span>
+      </div>
+    </div>
+
+    <!-- Input Box Card -->
+    <div class="bg-[#131b2e] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <label for="url-input" class="text-sm font-semibold text-slate-300">Target Website URL</label>
+        <span class="text-xs text-slate-500">e.g., https://example.com</span>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <input id="url-input" type="url" placeholder="Enter website URL to audit..." class="flex-1 bg-[#0b0f19] border border-slate-700/70 rounded-xl px-4 py-3.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm">
+        <button onclick="runAudit()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-blue-600/25">
+          <span>Analyze Site</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+      </div>
+      <div id="error-msg" class="hidden text-xs text-red-400 bg-red-950/40 border border-red-800/40 p-3 rounded-lg"></div>
+    </div>
+
+    <!-- Audit Results Section -->
+    <div id="results-box" class="hidden mt-8 bg-[#131b2e] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div>
+          <h3 class="text-lg font-bold text-white">Diagnostic Results</h3>
+          <p id="result-summary" class="text-xs text-slate-400 mt-1"></p>
+        </div>
+        <div class="text-right">
+          <div id="score-display" class="text-3xl font-extrabold text-blue-400">0/100</div>
+          <span class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">AI Readability</span>
+        </div>
       </div>
 
-      <!-- Step 2: Enter OTP Code -->
-      <div id="otpStep2" style="display: none;">
-        <h3 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem;">Enter Code</h3>
-        <p style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 1.5rem;">Enter the 6-digit code sent to your email.</p>
-        <input type="text" id="otpCode" placeholder="123456" maxlength="6" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; letter-spacing: 4px; text-align: center; font-size: 1.25rem; margin-bottom: 1rem;">
-        <button onclick="verifyOTP()" style="width: 100%; padding: 0.75rem; border-radius: 8px; background: #16a34a; color: #fff; font-weight: bold; border: none; cursor: pointer;">Verify & Continue →</button>
+      <!-- Score Breakdown Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-[#0b0f19] p-4 rounded-xl border border-slate-800">
+          <div class="text-xs text-slate-400 mb-1">Bot Accessibility</div>
+          <div id="score-bot" class="text-lg font-bold text-white">0/25</div>
+        </div>
+        <div class="bg-[#0b0f19] p-4 rounded-xl border border-slate-800">
+          <div class="text-xs text-slate-400 mb-1">Sitemap Status</div>
+          <div id="score-sitemap" class="text-lg font-bold text-white">0/25</div>
+        </div>
+        <div class="bg-[#0b0f19] p-4 rounded-xl border border-slate-800">
+          <div class="text-xs text-slate-400 mb-1">Schema JSON-LD</div>
+          <div id="score-schema" class="text-lg font-bold text-white">0/25</div>
+        </div>
+        <div class="bg-[#0b0f19] p-4 rounded-xl border border-slate-800">
+          <div class="text-xs text-slate-400 mb-1">Semantic HTML</div>
+          <div id="score-semantic" class="text-lg font-bold text-white">0/25</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-[#131b2e] border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative">
+      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">✕</button>
+      <h3 id="modal-title" class="text-lg font-bold text-white">Enter Your Email</h3>
+      <p class="text-xs text-slate-400">We'll send a 6-digit verification code to your inbox to authenticate your credits.</p>
+      
+      <!-- Step 1: Email Input -->
+      <div id="modal-step-1" class="space-y-3">
+        <input id="modal-email" type="email" placeholder="name@company.com" class="w-full bg-[#0b0f19] border border-slate-700/70 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button onclick="sendOtp()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl text-sm transition-all">Send Verification Code</button>
       </div>
 
+      <!-- Step 2: OTP Input -->
+      <div id="modal-step-2" class="hidden space-y-3">
+        <input id="modal-otp" type="text" maxlength="6" placeholder="123456" class="w-full bg-[#0b0f19] border border-slate-700/70 rounded-xl px-4 py-3 text-slate-100 text-center font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button onclick="verifyOtp()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl text-sm transition-all">Verify & Login</button>
+      </div>
+      <div id="modal-msg" class="text-xs text-center hidden"></div>
     </div>
   </div>
 
-  <!-- Pricing Modal -->
-  <div id="pricingModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 1rem;">
-    <div style="background: #1e293b; color: #f8fafc; width: 100%; max-width: 820px; border-radius: 16px; border: 1px solid #334155; padding: 2rem;">
-      <div style="text-align: center; margin-bottom: 2rem;">
-        <h2 style="font-size: 1.75rem; font-weight: bold; margin-bottom: 0.5rem;">Choose Your Plan</h2>
-        <p style="color: #94a3b8; font-size: 0.95rem;">You've used all 3 free audits. Select a subscription to unlock unlimited access.</p>
-      </div>
-
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 1.5rem; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
-          <div>
-            <h3 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem;">Free Tier</h3>
-            <div style="font-size: 1.75rem; font-weight: bold; margin-bottom: 1rem;">$0</div>
-            <ul style="list-style: none; padding: 0; color: #94a3b8; font-size: 0.875rem; text-align: left; line-height: 1.8;">
-              <li>✓ 3 Free Audit Credits</li>
-              <li>✓ Basic Bot & SEO Checks</li>
-              <li>✕ Renewal unavailable</li>
-            </ul>
-          </div>
-          <button onclick="closePricingModal()" style="margin-top: 1.5rem; width: 100%; padding: 0.6rem; border-radius: 8px; background: transparent; border: 1px solid #475569; color: #fff; cursor: pointer;">Current Plan</button>
-        </div>
-
-        <div style="background: #0f172a; border: 2px solid #0284c7; border-radius: 12px; padding: 1.5rem; text-align: center; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
-          <span style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #0284c7; color: white; padding: 2px 10px; font-size: 0.75rem; font-weight: bold; border-radius: 12px;">POPULAR</span>
-          <div>
-            <h3 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem;">Pro Monthly</h3>
-            <div style="font-size: 1.75rem; font-weight: bold; margin-bottom: 1rem;">$19 <span style="font-size: 0.875rem; color: #94a3b8;">/mo</span></div>
-            <ul style="list-style: none; padding: 0; color: #94a3b8; font-size: 0.875rem; text-align: left; line-height: 1.8;">
-              <li>✓ Unlimited Audits</li>
-              <li>✓ Renews monthly</li>
-              <li>✓ Instant JSON-LD Fixes</li>
-            </ul>
-          </div>
-          <a href="https://reviewhero.lemonsqueezy.com/checkout/buy/c2cf7360-f911-4cf5-a6f6-4b45893db0f0" class="lemonsqueezy-button" style="display: block; margin-top: 1.5rem; width: 100%; padding: 0.6rem; border-radius: 8px; background: #0284c7; color: #fff; text-decoration: none; font-weight: bold;">Upgrade Monthly</a>
-        </div>
-
-        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 1.5rem; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
-          <div>
-            <h3 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem;">Pro Annual</h3>
-            <div style="font-size: 1.75rem; font-weight: bold; margin-bottom: 1rem;">$149 <span style="font-size: 0.875rem; color: #94a3b8;">/yr</span></div>
-            <ul style="list-style: none; padding: 0; color: #94a3b8; font-size: 0.875rem; text-align: left; line-height: 1.8;">
-              <li>✓ Unlimited Audits</li>
-              <li>✓ Renews yearly (Save 35%)</li>
-              <li>✓ Priority Scanning</li>
-            </ul>
-          </div>
-          <a href="#" class="lemonsqueezy-button" style="display: block; margin-top: 1.5rem; width: 100%; padding: 0.6rem; border-radius: 8px; background: #334155; color: #fff; text-decoration: none; font-weight: bold;">Upgrade Yearly</a>
-        </div>
-      </div>
-
-      <div style="text-align: right;">
-        <button onclick="closePricingModal()" style="background: none; border: none; color: #64748b; cursor: pointer; text-decoration: underline; font-size: 0.875rem;">Close</button>
-      </div>
-    </div>
-  </div>
+  <footer class="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
+    &copy; 2026 AI Readability Diagnostic Tool. All rights reserved.
+  </footer>
 
   <script>
-    let currentEmail = '';
+    let userEmail = "";
 
-    const form = document.getElementById('auditForm');
-    const statusMsg = document.getElementById('statusMessage');
-    const resultsContainer = document.getElementById('resultsContainer');
-
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      const inputUrl = document.getElementById('urlInput').value;
-
-      statusMsg.textContent = 'Running AI Readability Audit... Please wait.';
-      statusMsg.classList.remove('hidden');
-      resultsContainer.classList.add('hidden');
-
-      fetch('/audit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: inputUrl })
-      })
-      .then(res => {
-        if (res.status === 401) {
-          document.getElementById('authModal').style.display = 'flex';
-          throw new Error('AUTH_REQUIRED');
-        }
-        if (res.status === 429) {
-          showPricingModal();
-          throw new Error('LIMIT_REACHED');
-        }
-        return res.json();
-      })
-      .then(data => {
-        statusMsg.classList.add('hidden');
-        resultsContainer.classList.remove('hidden');
-
-        document.getElementById('summaryText').textContent = data.summary;
-        document.getElementById('scoreBadge').textContent = `${data.overall_ai_score} / 100`;
-
-        const grid = document.getElementById('breakdownGrid');
-        grid.innerHTML = '';
-        const breakdown = data.breakdown || {};
-
-        if (breakdown.bot_accessibility) {
-          grid.innerHTML += `<div class="p-5 bg-slate-800 rounded-xl border border-slate-700"><h3 class="font-bold text-slate-200 mb-2">🤖 Bot Accessibility</h3><p class="text-xs text-slate-400">Score: ${breakdown.bot_accessibility.score}/25</p></div>`;
-        }
-        if (breakdown.sitemap_status) {
-          grid.innerHTML += `<div class="p-5 bg-slate-800 rounded-xl border border-slate-700"><h3 class="font-bold text-slate-200 mb-2">🗺️ Sitemap Status</h3><p class="text-xs text-slate-400">Score: ${breakdown.sitemap_status.score}/25</p></div>`;
-        }
-        if (breakdown.schema_json_ld) {
-          grid.innerHTML += `<div class="p-5 bg-slate-800 rounded-xl border border-slate-700"><h3 class="font-bold text-slate-200 mb-2">🏷️ Schema JSON-LD</h3><p class="text-xs text-slate-400">Score: ${breakdown.schema_json_ld.score}/25</p></div>`;
-        }
-        if (breakdown.semantic_html) {
-          grid.innerHTML += `<div class="p-5 bg-slate-800 rounded-xl border border-slate-700"><h3 class="font-bold text-slate-200 mb-2">🧱 Semantic HTML</h3><p class="text-xs text-slate-400">Score: ${breakdown.semantic_html.score}/25</p></div>`;
-        }
-      })
-      .catch(err => {
-        if (err.message !== 'AUTH_REQUIRED' && err.message !== 'LIMIT_REACHED') {
-          statusMsg.textContent = 'Error processing request. Please try again.';
-        } else {
-          statusMsg.classList.add('hidden');
-        }
-      });
-    });
-
-    function requestOTP() {
-      const email = document.getElementById('authEmail').value;
-      if (!email) return alert('Please enter your email.');
-
-      document.getElementById('sendOtpBtn').textContent = 'Sending...';
-
-      fetch('/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email })
-      })
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('sendOtpBtn').textContent = 'Send Verification Code';
-        if (data.success) {
-          currentEmail = email;
-          document.getElementById('otpStep1').style.display = 'none';
-          document.getElementById('otpStep2').style.display = 'block';
-        } else {
-          alert(data.error || 'Failed to send OTP');
-        }
-      });
+    function openAuthModal() {
+      document.getElementById('auth-modal').classList.remove('hidden');
     }
 
-    function verifyOTP() {
-      const otp = document.getElementById('otpCode').value;
-      if (!otp || otp.length !== 6) return alert('Please enter a valid 6-digit code.');
-
-      fetch('/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: currentEmail, otp: otp })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          document.getElementById('authModal').style.display = 'none';
-          alert(`Verified successfully! Remaining credits: ${data.is_pro ? 'Unlimited' : data.credits}`);
-        } else {
-          alert(data.error || 'Verification failed');
-        }
-      });
+    function closeAuthModal() {
+      document.getElementById('auth-modal').classList.add('hidden');
     }
 
-    function showPricingModal() { document.getElementById('pricingModal').style.display = 'flex'; }
-    function closePricingModal() { document.getElementById('pricingModal').style.display = 'none'; }
+    async function sendOtp() {
+      const email = document.getElementById('modal-email').value.trim();
+      const msgBox = document.getElementById('modal-msg');
+      if(!email) return;
+
+      msgBox.className = "text-xs text-center text-blue-400 block";
+      msgBox.innerText = "Sending OTP...";
+
+      try {
+        const res = await fetch('/send-otp', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if(res.ok) {
+          userEmail = email;
+          document.getElementById('modal-step-1').classList.add('hidden');
+          document.getElementById('modal-step-2').classList.remove('hidden');
+          document.getElementById('modal-title').innerText = "Enter Verification Code";
+          msgBox.className = "text-xs text-center text-emerald-400 block";
+          msgBox.innerText = "Code sent! Check your inbox/spam folder.";
+        } else {
+          msgBox.className = "text-xs text-center text-red-400 block";
+          msgBox.innerText = data.error || "Failed to send code";
+        }
+      } catch(e) {
+        msgBox.className = "text-xs text-center text-red-400 block";
+        msgBox.innerText = "Server error. Please try again.";
+      }
+    }
+
+    async function verifyOtp() {
+      const otp = document.getElementById('modal-otp').value.trim();
+      const msgBox = document.getElementById('modal-msg');
+      if(!otp) return;
+
+      try {
+        const res = await fetch('/verify-otp', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ email: userEmail, otp })
+        });
+        const data = await res.json();
+        if(res.ok) {
+          closeAuthModal();
+          document.getElementById('auth-status').innerHTML = `<span class="bg-slate-800 text-blue-400 px-3 py-1.5 rounded-lg text-xs font-semibold">${userEmail} (${data.credits} credits)</span>`;
+        } else {
+          msgBox.className = "text-xs text-center text-red-400 block";
+          msgBox.innerText = data.error || "Invalid OTP code";
+        }
+      } catch(e) {
+        msgBox.className = "text-xs text-center text-red-400 block";
+        msgBox.innerText = "Verification error";
+      }
+    }
+
+    async function runAudit() {
+      const url = document.getElementById('url-input').value.trim();
+      const errBox = document.getElementById('error-msg');
+      const resultsBox = document.getElementById('results-box');
+
+      errBox.classList.add('hidden');
+      if(!url) {
+        errBox.innerText = "Please enter a valid website URL.";
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const res = await fetch('/audit', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+
+        if(res.status === 401) {
+          openAuthModal();
+          return;
+        }
+
+        if(!res.ok) {
+          errBox.innerText = data.error || "Audit failed.";
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        // Render Results
+        document.getElementById('score-display').innerText = `${data.overall_ai_score}/100`;
+        document.getElementById('result-summary').innerText = data.summary;
+        document.getElementById('score-bot').innerText = `${data.breakdown.bot_accessibility.score}/25`;
+        document.getElementById('score-sitemap').innerText = `${data.breakdown.sitemap_status.score}/25`;
+        document.getElementById('score-schema').innerText = `${data.breakdown.schema_json_ld.score}/25`;
+        document.getElementById('score-semantic').innerText = `${data.breakdown.semantic_html.score}/25`;
+
+        resultsBox.classList.remove('hidden');
+      } catch(e) {
+        errBox.innerText = "Unable to connect to server.";
+        errBox.classList.remove('hidden');
+      }
+    }
   </script>
 </body>
 </html>
