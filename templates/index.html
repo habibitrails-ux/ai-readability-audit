@@ -10,34 +10,36 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; }
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
   </style>
 </head>
-<body class="bg-[#0b0f19] text-slate-100 min-h-screen flex flex-col justify-between">
+<body class="bg-[#080d1a] text-slate-100 min-h-screen flex flex-col justify-between selection:bg-blue-600 selection:text-white">
 
-  <!-- Header Navigation -->
-  <header class="border-b border-slate-800 bg-[#0b0f19]/80 backdrop-blur-md sticky top-0 z-50">
+  <!-- Navigation Header -->
+  <header class="border-b border-slate-800/80 bg-[#080d1a]/90 backdrop-blur-md sticky top-0 z-50">
     <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
         <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">⚡</div>
         <span class="font-bold text-lg tracking-tight">ai-readability.app</span>
       </div>
       <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-400">
-        <a href="#" class="text-white">Checker</a>
-        <a href="#" class="hover:text-white transition-colors">How it works</a>
-        <a href="#" class="hover:text-white transition-colors">AI Overviews</a>
-        <a href="#" class="hover:text-white transition-colors">FAQ</a>
+        <a href="#checker" class="text-white hover:text-blue-400 transition-colors">Checker</a>
+        <a href="#how-it-works" class="hover:text-white transition-colors">How it works</a>
+        <a href="#ai-overviews" class="hover:text-white transition-colors">AI Overviews</a>
+        <a href="#faq" class="hover:text-white transition-colors">FAQ</a>
       </nav>
       <div id="auth-status" class="text-sm font-medium text-slate-400">
-        <button onclick="openAuthModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all">Sign In</button>
+        <button onclick="openAuthModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-md shadow-blue-600/20">Sign In</button>
       </div>
     </div>
   </header>
 
-  <!-- Hero & Main Tool Section -->
-  <main class="max-w-4xl mx-auto px-6 pt-16 pb-20 w-full flex-grow">
+  <!-- Hero & Tool Container -->
+  <main class="max-w-4xl mx-auto px-6 pt-12 pb-16 w-full flex-grow space-y-16">
     
-    <!-- Hero Header -->
-    <div class="text-center space-y-4 mb-10">
+    <!-- Hero Title Header -->
+    <div id="checker" class="text-center space-y-4">
       <div class="inline-flex items-center space-x-2 bg-blue-950/60 border border-blue-800/50 px-3 py-1 rounded-full text-xs font-semibold text-blue-400">
         <span>⚡ ai-readability — a Diagnostic tool</span>
       </div>
@@ -45,35 +47,51 @@
         AI Readability Checker — Get Your AI Readability Score
       </h1>
       <p class="text-slate-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
-        Paste any URL, article, or document and receive an AI Readability Score, grade, and clear recommendations in seconds.
+        Paste any article, section of your homepage, product description, or piece of documentation (150–1,500 words works best).
       </p>
       
-      <!-- Feature Pills -->
       <div class="flex items-center justify-center space-x-6 text-xs text-slate-400 pt-2 font-medium">
         <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> Private</span>
-        <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> Fast Diagnostics</span>
-        <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> 3 Free Credits</span>
+        <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> Runs locally</span>
+        <span class="flex items-center gap-1.5"><svg class="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg> No signup required</span>
       </div>
     </div>
 
-    <!-- Input Box Card -->
-    <div class="bg-[#131b2e] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between">
-        <label for="url-input" class="text-sm font-semibold text-slate-300">Target Website URL</label>
-        <span class="text-xs text-slate-500">e.g., https://example.com</span>
+    <!-- Text Input Box Component -->
+    <div class="bg-[#101728] border border-slate-800 rounded-2xl p-4 md:p-6 shadow-2xl space-y-4">
+      <div class="relative">
+        <textarea id="text-input" oninput="updateWordCount()" rows="8" placeholder="Paste an article, a section of your homepage, a product description, or a piece of documentation. 150–1,500 words works best." class="w-full bg-[#080d1a] border border-slate-800 rounded-xl p-4 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm leading-relaxed resize-y min-h-[200px]"></textarea>
+        
+        <!-- Action Toolbar -->
+        <div class="flex items-center justify-between border-t border-slate-800/80 pt-3 mt-2 px-1 text-xs text-slate-400">
+          <div class="flex items-center gap-4">
+            <button onclick="pasteFromClipboard()" class="flex items-center gap-1.5 hover:text-white transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              <span>Paste</span>
+            </button>
+            <button onclick="clearText()" class="flex items-center gap-1.5 hover:text-white transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              <span>Clear</span>
+            </button>
+          </div>
+          <div>
+            <span id="word-count" class="font-mono text-slate-400">0</span> words
+          </div>
+        </div>
       </div>
-      <div class="flex flex-col sm:flex-row gap-3">
-        <input id="url-input" type="url" placeholder="Enter website URL to audit..." class="flex-1 bg-[#0b0f19] border border-slate-700/70 rounded-xl px-4 py-3.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all text-sm">
-        <button onclick="runAudit()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-lg shadow-blue-600/25">
-          <span>Analyze Site</span>
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+
+      <div class="flex items-center justify-between pt-2">
+        <span class="text-xs text-slate-500">English only (for now)</span>
+        <button onclick="runAudit()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-3 rounded-xl transition-all flex items-center gap-2 text-sm shadow-lg shadow-blue-600/20">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <span>Check AI Readability</span>
         </button>
       </div>
       <div id="error-msg" class="hidden text-xs text-red-400 bg-red-950/40 border border-red-800/40 p-3 rounded-lg"></div>
     </div>
 
-    <!-- Audit Results Section -->
-    <div id="results-box" class="hidden mt-8 bg-[#131b2e] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
+    <!-- Audit Diagnostic Output Box -->
+    <div id="results-box" class="hidden bg-[#101728] border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-6">
       <div class="flex items-center justify-between border-b border-slate-800 pb-4">
         <div>
           <h3 class="text-lg font-bold text-white">Diagnostic Results</h3>
@@ -85,168 +103,219 @@
         </div>
       </div>
 
-      <!-- Score Breakdown Grid -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-[#0b0f19] p-4 rounded-xl border border-slate-800">
-          <div class="text-xs text-slate-400 mb-1">Bot Accessibility</div>
+        <div class="bg-[#080d1a] p-4 rounded-xl border border-slate-800">
+          <div class="text-xs text-slate-400 mb-1">Sentence Clarity</div>
           <div id="score-bot" class="text-lg font-bold text-white">0/25</div>
         </div>
-        <div class="bg-[#0b0f19] p-4 rounded-xl border border-slate-800">
-          <div class="text-xs text-slate-400 mb-1">Sitemap Status</div>
+        <div class="bg-[#080d1a] p-4 rounded-xl border border-slate-800">
+          <div class="text-xs text-slate-400 mb-1">Structure</div>
           <div id="score-sitemap" class="text-lg font-bold text-white">0/25</div>
         </div>
-        <div class="bg-[#0b0f19] p-4 rounded-xl border border-slate-800">
-          <div class="text-xs text-slate-400 mb-1">Schema JSON-LD</div>
+        <div class="bg-[#080d1a] p-4 rounded-xl border border-slate-800">
+          <div class="text-xs text-slate-400 mb-1">Entity Consistency</div>
           <div id="score-schema" class="text-lg font-bold text-white">0/25</div>
         </div>
-        <div class="bg-[#0b0f19] p-4 rounded-xl border border-slate-800">
-          <div class="text-xs text-slate-400 mb-1">Semantic HTML</div>
+        <div class="bg-[#080d1a] p-4 rounded-xl border border-slate-800">
+          <div class="text-xs text-slate-400 mb-1">Answer Readiness</div>
           <div id="score-semantic" class="text-lg font-bold text-white">0/25</div>
         </div>
       </div>
     </div>
 
+    <!-- Section 1: How AI Readability Works -->
+    <section id="how-it-works" class="border-t border-slate-800/80 pt-12 space-y-6">
+      <div class="space-y-2">
+        <span class="text-xs font-bold uppercase tracking-wider text-blue-400">Learn More</span>
+        <h2 class="text-2xl md:text-3xl font-bold text-white">How AI Readability works</h2>
+        <p class="text-sm text-slate-400">Short answers up top. Expand any section for the detailed reasoning. For the full reference, read the <a href="#" class="text-blue-400 underline">AI Readability Guide</a>.</p>
+      </div>
+
+      <div class="space-y-4">
+        <details class="group bg-[#101728] border border-slate-800 rounded-xl overflow-hidden">
+          <summary class="flex justify-between items-center p-4 cursor-pointer font-semibold text-sm text-slate-200 group-open:text-blue-400">
+            <span>What the AI Readability Score measures</span>
+            <span class="transition group-open:rotate-180">↓</span>
+          </summary>
+          <div class="p-4 pt-0 text-xs text-slate-400 border-t border-slate-800/50 space-y-2">
+            The AI Readability Score covers four main traits: <strong>clarity</strong>, <strong>structure</strong>, <strong>entity consistency</strong>, and <strong>answer-readiness</strong> into a single 0–100 index.
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- Section 2: Why Pages Appear in Google AI Overviews -->
+    <section id="ai-overviews" class="border-t border-slate-800/80 pt-12 space-y-6">
+      <div class="space-y-3">
+        <h2 class="text-2xl md:text-3xl font-bold text-white">Why some pages appear in Google AI Overviews</h2>
+        <p class="text-sm text-slate-400 leading-relaxed">
+          Google's AI Overviews cite pages that are easy to parse, segment, summarize and attribute. The model favors content it can quote with confidence.
+        </p>
+        <p class="text-sm text-slate-400 leading-relaxed">
+          That is why the same traits the AI Readability Score measures — sentence clarity, structure, entity consistency and answer readiness — also shape whether a page is likely to be surfaced as a source.
+        </p>
+      </div>
+
+      <div class="space-y-4 text-xs text-slate-300">
+        <div class="flex items-start gap-3">
+          <span class="text-blue-400 font-bold text-base">•</span>
+          <div>
+            <strong class="text-white text-sm">Answer-first sections.</strong> Pages that open with a direct answer or plain definition are easier to summarize than pages that build up to a point slowly. The first one or two sentences do most of the work.
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-blue-400 font-bold text-base">•</span>
+          <div>
+            <strong class="text-white text-sm">Clear intent-based headings.</strong> Headings that describe what a section answers give models a map of the page. A heading like "What is AI Readability?" signals a quotable definition better than a vague label.
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-blue-400 font-bold text-base">•</span>
+          <div>
+            <strong class="text-white text-sm">Small extractable blocks.</strong> Short paragraphs, list items, and definition-style passages are easier to lift out of a page than long argumentative sections. Each block should be able to stand on its own.
+          </div>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-blue-400 font-bold text-base">•</span>
+          <div>
+            <strong class="text-white text-sm">Consistent entity language.</strong> A page that calls the same product, concept, or company by the same name every time is easier to attribute. Drifting names, unclear pronouns, and inconsistent terminology weaken attribution.
+          </div>
+        </div>
+      </div>
+
+      <!-- Featured Guide Banner -->
+      <div class="bg-[#101728] border border-slate-800 rounded-xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 mt-6">
+        <div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Featured Guide</span>
+          <h3 class="text-base font-bold text-white mt-1">AI Readability Guide</h3>
+          <p class="text-xs text-slate-400 mt-1">A practical reference on what AI Readability is, how the AI Readability Score is measured, and how to write content that language models can parse and quote.</p>
+        </div>
+        <a href="#" class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-400 hover:text-blue-300 whitespace-nowrap">Read guide ↗</a>
+      </div>
+    </section>
+
+    <!-- Section 3: FAQ -->
+    <section id="faq" class="border-t border-slate-800/80 pt-12 space-y-6">
+      <div class="space-y-1">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">FAQ</span>
+        <h2 class="text-2xl md:text-3xl font-bold text-white">Common questions</h2>
+      </div>
+
+      <div class="space-y-3">
+        <details class="group bg-[#101728] border border-slate-800 rounded-xl overflow-hidden">
+          <summary class="flex justify-between items-center p-4 cursor-pointer font-semibold text-sm text-slate-200 group-open:text-blue-400">
+            <span>How is AI Readability different from traditional readability?</span>
+            <span class="transition group-open:rotate-180">↓</span>
+          </summary>
+          <div class="p-4 pt-0 text-xs text-slate-400 border-t border-slate-800/50">
+            Traditional readability (like Flesch-Kincaid) evaluates reading ease for human readers based on syllable and sentence counts. AI Readability focuses on structural clarity, semantic entity tags, and extractability for AI search engines and LLM parsers.
+          </div>
+        </details>
+
+        <details class="group bg-[#101728] border border-slate-800 rounded-xl overflow-hidden">
+          <summary class="flex justify-between items-center p-4 cursor-pointer font-semibold text-sm text-slate-200 group-open:text-blue-400">
+            <span>Can AI Readability affect Google AI Overviews?</span>
+            <span class="transition group-open:rotate-180">↓</span>
+          </summary>
+          <div class="p-4 pt-0 text-xs text-slate-400 border-t border-slate-800/50">
+            Yes. Pages that use clear, answer-first structures and entity consistency are significantly more likely to be extracted and cited as sources in Google AI Overviews and LLM responses.
+          </div>
+        </details>
+
+        <details class="group bg-[#101728] border border-slate-800 rounded-xl overflow-hidden">
+          <summary class="flex justify-between items-center p-4 cursor-pointer font-semibold text-sm text-slate-200 group-open:text-blue-400">
+            <span>How can I improve my AI Readability Score?</span>
+            <span class="transition group-open:rotate-180">↓</span>
+          </summary>
+          <div class="p-4 pt-0 text-xs text-slate-400 border-t border-slate-800/50">
+            Use explicit headers, start key paragraphs with direct answers, avoid ambiguous pronoun usage, and organize complex lists into bullet points or schema markup.
+          </div>
+        </details>
+      </div>
+    </section>
+
   </main>
 
   <!-- Auth Modal -->
   <div id="auth-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div class="bg-[#131b2e] border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative">
+    <div class="bg-[#101728] border border-slate-800 rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative">
       <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">✕</button>
       <h3 id="modal-title" class="text-lg font-bold text-white">Enter Your Email</h3>
       <p class="text-xs text-slate-400">We'll send a 6-digit verification code to your inbox to authenticate your credits.</p>
       
-      <!-- Step 1: Email Input -->
       <div id="modal-step-1" class="space-y-3">
-        <input id="modal-email" type="email" placeholder="name@company.com" class="w-full bg-[#0b0f19] border border-slate-700/70 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <input id="modal-email" type="email" placeholder="name@company.com" class="w-full bg-[#080d1a] border border-slate-700/70 rounded-xl px-4 py-3 text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
         <button onclick="sendOtp()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl text-sm transition-all">Send Verification Code</button>
       </div>
 
-      <!-- Step 2: OTP Input -->
       <div id="modal-step-2" class="hidden space-y-3">
-        <input id="modal-otp" type="text" maxlength="6" placeholder="123456" class="w-full bg-[#0b0f19] border border-slate-700/70 rounded-xl px-4 py-3 text-slate-100 text-center font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <input id="modal-otp" type="text" maxlength="6" placeholder="123456" class="w-full bg-[#080d1a] border border-slate-700/70 rounded-xl px-4 py-3 text-slate-100 text-center font-mono text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500">
         <button onclick="verifyOtp()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 rounded-xl text-sm transition-all">Verify & Login</button>
       </div>
       <div id="modal-msg" class="text-xs text-center hidden"></div>
     </div>
   </div>
 
-  <footer class="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
-    &copy; 2026 AI Readability Diagnostic Tool. All rights reserved.
+  <!-- Footer Navigation -->
+  <footer class="border-t border-slate-800/80 bg-[#080d1a] py-12 text-xs text-slate-500">
+    <div class="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="space-y-3">
+        <div class="flex items-center space-x-2">
+          <div class="w-6 h-6 rounded bg-blue-600 flex items-center justify-center font-bold text-white text-xs">⚡</div>
+          <span class="font-bold text-white text-sm">ai-readability.app</span>
+        </div>
+        <p class="text-slate-400 leading-relaxed">A focused utility to diagnose and optimize web content for AI search engines, LLM parsers, and Google AI Overviews.</p>
+        <p class="text-[11px] text-slate-600">&copy; 2026 ai-readability.app. All rights reserved.</p>
+      </div>
+
+      <div class="space-y-2">
+        <div class="font-bold uppercase tracking-wider text-slate-400 text-[11px]">Product</div>
+        <ul class="space-y-1.5 text-slate-400">
+          <li><a href="#checker" class="hover:text-white">Checker</a></li>
+          <li><a href="#how-it-works" class="hover:text-white">How it works</a></li>
+          <li><a href="#ai-overviews" class="hover:text-white">AI Overviews</a></li>
+          <li><a href="#faq" class="hover:text-white">FAQ</a></li>
+        </ul>
+      </div>
+
+      <div class="space-y-2">
+        <div class="font-bold uppercase tracking-wider text-slate-400 text-[11px]">Resources</div>
+        <ul class="space-y-1.5 text-slate-400">
+          <li><a href="#" class="hover:text-white">AI Readability Guide</a></li>
+          <li><a href="#" class="hover:text-white">AI Readability Score Explained</a></li>
+          <li><a href="#" class="hover:text-white">AI Readability vs. Flesch</a></li>
+          <li><a href="#" class="hover:text-white">Common Mistakes</a></li>
+        </ul>
+      </div>
+    </div>
   </footer>
 
   <script>
     let userEmail = "";
 
+    function updateWordCount() {
+      const text = document.getElementById('text-input').value.trim();
+      const words = text ? text.split(/\s+/).length : 0;
+      document.getElementById('word-count').innerText = words;
+    }
+
+    async function pasteFromClipboard() {
+      try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('text-input').value = text;
+        updateWordCount();
+      } catch (err) {
+        alert('Please allow clipboard permissions or paste manually using Ctrl+V.');
+      }
+    }
+
+    function clearText() {
+      document.getElementById('text-input').value = '';
+      updateWordCount();
+    }
+
     function openAuthModal() {
       document.getElementById('auth-modal').classList.remove('hidden');
     }
 
-    function closeAuthModal() {
-      document.getElementById('auth-modal').classList.add('hidden');
-    }
-
-    async function sendOtp() {
-      const email = document.getElementById('modal-email').value.trim();
-      const msgBox = document.getElementById('modal-msg');
-      if(!email) return;
-
-      msgBox.className = "text-xs text-center text-blue-400 block";
-      msgBox.innerText = "Sending OTP...";
-
-      try {
-        const res = await fetch('/send-otp', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ email })
-        });
-        const data = await res.json();
-        if(res.ok) {
-          userEmail = email;
-          document.getElementById('modal-step-1').classList.add('hidden');
-          document.getElementById('modal-step-2').classList.remove('hidden');
-          document.getElementById('modal-title').innerText = "Enter Verification Code";
-          msgBox.className = "text-xs text-center text-emerald-400 block";
-          msgBox.innerText = "Code sent! Check your inbox/spam folder.";
-        } else {
-          msgBox.className = "text-xs text-center text-red-400 block";
-          msgBox.innerText = data.error || "Failed to send code";
-        }
-      } catch(e) {
-        msgBox.className = "text-xs text-center text-red-400 block";
-        msgBox.innerText = "Server error. Please try again.";
-      }
-    }
-
-    async function verifyOtp() {
-      const otp = document.getElementById('modal-otp').value.trim();
-      const msgBox = document.getElementById('modal-msg');
-      if(!otp) return;
-
-      try {
-        const res = await fetch('/verify-otp', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ email: userEmail, otp })
-        });
-        const data = await res.json();
-        if(res.ok) {
-          closeAuthModal();
-          document.getElementById('auth-status').innerHTML = `<span class="bg-slate-800 text-blue-400 px-3 py-1.5 rounded-lg text-xs font-semibold">${userEmail} (${data.credits} credits)</span>`;
-        } else {
-          msgBox.className = "text-xs text-center text-red-400 block";
-          msgBox.innerText = data.error || "Invalid OTP code";
-        }
-      } catch(e) {
-        msgBox.className = "text-xs text-center text-red-400 block";
-        msgBox.innerText = "Verification error";
-      }
-    }
-
-    async function runAudit() {
-      const url = document.getElementById('url-input').value.trim();
-      const errBox = document.getElementById('error-msg');
-      const resultsBox = document.getElementById('results-box');
-
-      errBox.classList.add('hidden');
-      if(!url) {
-        errBox.innerText = "Please enter a valid website URL.";
-        errBox.classList.remove('hidden');
-        return;
-      }
-
-      try {
-        const res = await fetch('/audit', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ url })
-        });
-        const data = await res.json();
-
-        if(res.status === 401) {
-          openAuthModal();
-          return;
-        }
-
-        if(!res.ok) {
-          errBox.innerText = data.error || "Audit failed.";
-          errBox.classList.remove('hidden');
-          return;
-        }
-
-        // Render Results
-        document.getElementById('score-display').innerText = `${data.overall_ai_score}/100`;
-        document.getElementById('result-summary').innerText = data.summary;
-        document.getElementById('score-bot').innerText = `${data.breakdown.bot_accessibility.score}/25`;
-        document.getElementById('score-sitemap').innerText = `${data.breakdown.sitemap_status.score}/25`;
-        document.getElementById('score-schema').innerText = `${data.breakdown.schema_json_ld.score}/25`;
-        document.getElementById('score-semantic').innerText = `${data.breakdown.semantic_html.score}/25`;
-
-        resultsBox.classList.remove('hidden');
-      } catch(e) {
-        errBox.innerText = "Unable to connect to server.";
-        errBox.classList.remove('hidden');
-      }
-    }
-  </script>
-</body>
-</html>
+    function close
